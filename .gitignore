@@ -1,0 +1,9 @@
+__pycache__/
+
+# Streamlit secrets (コミットしない)
+.streamlit/secrets.toml
+
+# OS/Editor
+.DS_Store
+.vscode/
+.idea/
