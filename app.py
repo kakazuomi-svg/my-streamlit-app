@@ -3,7 +3,6 @@ import pandas as pd
 import gspread
 from google.oauth2.service_account import Credentials
 
-
 # --- Google認証 ---
 SCOPE = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 creds = Credentials.from_service_account_info(st.secrets["google_service_account"], scopes=SCOPE)
@@ -14,9 +13,9 @@ ws = client.open("soccer_training").worksheet("シート1")
 data = ws.get_all_records()
 df = pd.DataFrame(data)
 
-# ★ この2行を追加 ★
-headers = ws.row_values(1)  # 1行目（ヘッダー）を取得
-df = df[headers]             # スプレッドシートと同じ列順に並べ替え
+# --- 列順をスプレッドシートと合わせる ---
+headers = ws.row_values(1)
+df = df[headers]
 
 st.dataframe(df)
 
@@ -50,24 +49,10 @@ for event, group in df_long.groupby("種目"):
 best_df = pd.DataFrame(best_list)
 
 # --- シートの列順どおりに並べ替え ---
-headers = ws.row_values(1)
-# シートの列順のうち、exclude_cols以外＋best_dfに存在する列のみ使用
 column_order = [c for c in headers if c in best_df["種目"].values and c not in exclude_cols]
-
 best_df["種目"] = pd.Categorical(best_df["種目"], categories=column_order, ordered=True)
 best_df = best_df.sort_values("種目").reset_index(drop=True)
 
-# --- 表示 ---
+# --- 表示（ここだけ残す！） ---
 st.subheader("🏆 種目別 最高記録一覧（タイム系は最小値）")
 st.dataframe(best_df, use_container_width=True)
-
-
-# DataFrame の列をこの順に並べ替え（存在する列だけ抽出）
-df = df[[col for col in column_order if col in df.columns]]
-# --- 表示 ---
-st.dataframe(best_df.sort_values("種目").reset_index(drop=True), use_container_width=True)
-
-
-
-
-
