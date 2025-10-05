@@ -15,25 +15,26 @@ client = gspread.authorize(creds)
 ws = client.open("soccer_training").worksheet("シート1")
 
 # --- シート読み込み ---
-import pandas as pd
-
 records = ws.get_all_records()
 
-# 空シート対策
 if not records:
     st.warning("まだデータがありません。")
     st.stop()
 
 df = pd.DataFrame(records)
 
-# --- 横型 → 縦型に変換 ---
-# 「日付」列を除く全ての列を melt で縦にまとめる
-df_long = df.melt(id_vars=["日付"], var_name="種目", value_name="記録")
+# --- 不要な列を除外 ---
+exclude_cols = ["メモ", "年齢", "リフティングレベル", "リフティング時間", "身長", "体重"]
+cols_to_use = [c for c in df.columns if c not in exclude_cols]
 
-# 数値変換（文字列や空白を除外）
+# --- 横型 → 縦型変換（除外列を使わない） ---
+df_long = df.melt(id_vars=["日付"], value_vars=[c for c in cols_to_use if c != "日付"],
+                  var_name="種目", value_name="記録")
+
+# --- 数値変換（空白や文字を除外） ---
 df_long["記録"] = pd.to_numeric(df_long["記録"], errors="coerce")
 
-# --- 種目ごとに最大値を抽出 ---
+# --- 種目ごとの最大値を抽出 ---
 best_df = df_long.groupby("種目", as_index=False)["記録"].max()
 
 # --- 表示 ---
