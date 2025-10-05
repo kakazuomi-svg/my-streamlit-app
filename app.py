@@ -35,10 +35,10 @@ df_long = df.melt(
     value_name="記録"
 )
 
-# 数値変換
+# --- 数値変換 ---
 df_long["記録"] = pd.to_numeric(df_long["記録"], errors="coerce")
 
-# --- タイム系種目（最小値をとる） ---
+# --- タイム系（小さい方が良い） ---
 time_events = ["1.3km", "4mダッシュ", "50m走"]
 
 # --- 集計 ---
@@ -50,11 +50,13 @@ for event, group in df_long.groupby("種目"):
         best_value = group["記録"].max()
     best_list.append({"種目": event, "最高記録": best_value})
 
+# DataFrame化
 best_df = pd.DataFrame(best_list)
 
 # --- 表示 ---
 st.subheader("🏆 種目別 最高記録一覧（タイム系は最小値）")
 st.dataframe(best_df.sort_values("種目").reset_index(drop=True), use_container_width=True)
+
 
 #----------------------------------------------------------------------------------------------
 
