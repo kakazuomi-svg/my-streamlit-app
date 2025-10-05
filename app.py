@@ -122,7 +122,11 @@ def highlight_rows(row):
         return [""] * len(row)
 
 # --- スタイル適用 ---
-styled = best_df.style.apply(highlight_rows, axis=1)
+styled = (
+    best_df.style
+    .apply(highlight_rows, axis=1)
+    .format(subset=["最高記録", "基準値", "目標値"], formatter="{:.2f}")
+)
 
 # --- 表示（タイトルも統一） ---
 st.markdown(f"## 🏆 {current_age}歳 基準・目標付き最高記録一覧（タイム系は最小値）")
