@@ -47,9 +47,9 @@ for event, group in df_long.groupby("種目"):
 best_df = pd.DataFrame(best_list)
 
 
-# --- 最新の年齢を取得（最後に入力された値を使う） ---
+# --- 最新の年齢を取得（最後に入力された「数字」を使う） ---
 try:
-    current_age = int(df["年齢"].dropna().iloc[-1])
+    current_age = int(df["年齢"].dropna().astype(str).str.extract(r'(\d+)').dropna().iloc[-1, 0])
 except Exception:
     current_age = None
 
