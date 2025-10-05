@@ -49,6 +49,15 @@ for event, group in df_long.groupby("種目"):
 
 best_df = pd.DataFrame(best_list)
 
+# --- 表示したい列順（スプレッドシート準拠） ---
+column_order = [
+    "身長","体重","4mダッシュ", "50m走", "1.3km",
+    "立ち幅跳び", "握力（右）", "握力（左）",
+    "パントキック", "ゴールキック", "ソフトボール投げ"
+]
+
+# DataFrame の列をこの順に並べ替え（存在する列だけ抽出）
+df = df[[col for col in column_order if col in df.columns]]
 # --- 表示 ---
 st.subheader("🏆 種目別 最高記録一覧（タイム系は最小値）")
 st.dataframe(best_df.sort_values("種目").reset_index(drop=True), use_container_width=True)
