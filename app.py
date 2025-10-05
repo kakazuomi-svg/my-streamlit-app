@@ -56,6 +56,8 @@ best_df = pd.DataFrame(best_list)
 st.subheader("🏆 種目別 最高記録一覧（タイム系は最小値）")
 st.dataframe(best_df.sort_values("種目").reset_index(drop=True), use_container_width=True)
 
+#----------------------------------------------------------------------------------------------
+
 # --- スプレッドシート読み込み ---
 df = pd.DataFrame(ws.get_all_records())
 
