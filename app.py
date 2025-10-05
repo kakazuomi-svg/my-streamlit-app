@@ -3,7 +3,6 @@ import pandas as pd
 import gspread
 from google.oauth2.service_account import Credentials
 
-st.title("🏃‍♀️ 種目別 最高記録一覧（タイム系は最小値）")
 
 # --- Google認証 ---
 SCOPE = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
@@ -66,7 +65,6 @@ st.dataframe(best_df, use_container_width=True)
 # DataFrame の列をこの順に並べ替え（存在する列だけ抽出）
 df = df[[col for col in column_order if col in df.columns]]
 # --- 表示 ---
-st.subheader("🏆 種目別 最高記録一覧（タイム系は最小値）")
 st.dataframe(best_df.sort_values("種目").reset_index(drop=True), use_container_width=True)
 
 
