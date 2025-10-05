@@ -82,5 +82,16 @@ if current_age:
 # --- タイトル書式統一（None回避） ---
 title_age = f"{current_age}歳 " if current_age else ""
 
+# --- 書式を小数点2位に統一 ---
+for col in ["最高記録", "基準値", "目標値"]:
+    if col in best_df.columns:
+        best_df[col] = pd.to_numeric(best_df[col], errors="coerce").round(2)
+
+# --- 表示 ---
+st.markdown(f"## 🏆 {current_age}歳 基準・目標付き最高記録一覧（タイム系は最小値）")
+st.dataframe(best_df, use_container_width=True)
+
+
+
 st.markdown(f"## 🏆 {title_age}基準・目標付き最高記録一覧（タイム系は最小値）")
 st.dataframe(best_df, use_container_width=True)
