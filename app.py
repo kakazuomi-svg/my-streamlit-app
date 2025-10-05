@@ -45,6 +45,26 @@ events = [
     "ゴールキック", "ソフトボール投げ"
 ]
 
+# --- スプレッドシート読み込み ---
+df = pd.DataFrame(ws.get_all_records())
+
+# --- 種目が存在しないならスキップ ---
+if df.empty:
+    st.warning("まだデータがありません。")
+    st.stop()
+
+# --- 各種目ごとに「最高記録」抽出 ---
+# ここでは「大きい方が良い」想定（例：立ち幅跳び、握力など）
+# もし「タイム（短い方が良い）」の種目がある場合は、あとで条件分けできる
+best_df = df.groupby("種目", as_index=False)["最高記録"].max()
+
+# --- 表示 ---
+st.subheader("🏆 種目別 最高記録一覧")
+st.dataframe(best_df, use_container_width=True)
+
+
+
+
 # --- 必要な種目だけ抽出 ---
 df = df[df["種目"].isin(events)].copy()
 
