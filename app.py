@@ -1,28 +1,32 @@
-# -*- coding: utf-8 -*-
 import streamlit as st
 import pandas as pd
-import numpy as np
 
-st.set_page_config(page_title="別アプリ v1", page_icon="✨", layout="wide")
-st.title("✨ 別アプリ v1 (GitHub→Streamlit Cloud)")
+st.title("🏃‍♀️ 種目別ベスト一覧")
 
-st.sidebar.header("設定")
-name = st.sidebar.text_input("お名前", value="ゲスト")
+# 種目リスト（リフティング除外）
+events = [
+    "4mダッシュ",
+    "50m走",
+    "1.3km",
+    "立ち幅跳び",
+    "握力（右）",
+    "握力（左）",
+    "パントキック",
+    "ゴールキック",
+    "ソフトボール投げ",
+]
 
-@st.cache_data
-def load_demo(n=100):
-    rng = np.random.default_rng(42)
-    return pd.DataFrame({"x": np.arange(n), "y": rng.normal(0,1,n).cumsum()})
+# ダミーデータ（後でシート連携に置き換え予定）
+data = []
+for e in events:
+    row = {
+        "種目": e,
+        "最高記録": 0,
+        "基準値": 0,
+        "目標値": 0,
+    }
+    data.append(row)
 
-st.write(f"こんにちは、{name} さん！")
-df = load_demo(365)
-st.subheader("📈 折れ線グラフ")
-st.line_chart(df.set_index("x")["y"])
+df = pd.DataFrame(data, columns=["種目", "最高記録", "基準値", "目標値"])
 
-st.subheader("🗂️ データ（先頭10行）")
-st.dataframe(df.head(10), use_container_width=True)
-
-csv = df.to_csv(index=False).encode("utf-8-sig")
-st.download_button("CSV ダウンロード", data=csv, file_name="demo.csv", mime="text/csv")
-
-st.caption("v1 / 最小構成。pages/ を追加して多機能化できます。")
+st.dataframe(df, use_container_width=True)
