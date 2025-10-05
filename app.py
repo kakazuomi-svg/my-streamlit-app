@@ -22,7 +22,7 @@ df = df[headers]             # スプレッドシートと同じ列順に並べ�
 st.dataframe(df)
 
 # --- 不要な列を除外 ---
-exclude_cols = ["メモ", "年齢", "リフティングレベル", "リフティング時間","疲労度" ]
+exclude_cols = ["メモ", "年齢", "リフティングレベル", "リフティング時間","疲労度", ]
 cols_to_use = [c for c in df.columns if c not in exclude_cols]
 
 # --- 横型 → 縦型に変換 ---
