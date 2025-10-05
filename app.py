@@ -2,18 +2,18 @@ import streamlit as st
 import pandas as pd
 import gspread
 from google.oauth2.service_account import Credentials
-import json
 
 st.title("🏃‍♀️ 種目別ベスト一覧（スプレッドシート連動版）")
 
+# --- Google認証 ---
 SCOPE = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 
-# Streamlit CloudのSecretsから直接JSONを読み込む
-creds_dict = json.loads(st.secrets["GOOGLE_CREDENTIALS"])
-creds = Credentials.from_service_account_info(creds_dict, scopes=SCOPE)
+# Streamlit Secretsから直接辞書として取得
+creds = Credentials.from_service_account_info(st.secrets["google_service_account"], scopes=SCOPE)
 
 client = gspread.authorize(creds)
 ws = client.open("soccer_training").worksheet("シート1")
+
 
 
 # --- 対象種目 ---
