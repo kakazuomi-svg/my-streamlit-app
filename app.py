@@ -99,28 +99,40 @@ best_df = best_df.sort_values("種目", key=lambda x: x.map(order_map)).reset_in
 import numpy as np
 
 
-# --- 色付け関数（行ごと色分け） ---
+# --- 色付け関数（行ごと色分け・タイム系逆判定対応） ---
 def highlight_rows(row):
     try:
         best = row["最高記録"]
         base = row["基準値"]
         goal = row["目標値"]
+        event = row["種目"]
 
         if np.isnan(best) or np.isnan(base) or np.isnan(goal):
             return [""] * len(row)
 
-        if best < base:
-            color = "background-color: #ffd6d6;"  # パステルレッド
-        elif best < goal:
-            color = "background-color: #d8f5d8;"  # パステルグリーン
+        # タイム系（小さいほど良い）
+        if event in ["4mダッシュ", "50m走", "1.3km"]:
+            if best > base:  # 基準より遅い
+                color = "background-color: #ffd6d6;"  # パステルレッド
+            elif best > goal:  # 目標よりは遅いけど基準内
+                color = "background-color: #d8f5d8;"  # パステルグリーン
+            else:  # 目標より速い（良い）
+                color = "background-color: #d8e8ff;"  # パステルブルー
         else:
-            color = "background-color: #d8e8ff;"  # パステルブルー
+            # 通常系（大きいほど良い）
+            if best < base:
+                color = "background-color: #ffd6d6;"  # パステルレッド
+            elif best < goal:
+                color = "background-color: #d8f5d8;"  # パステルグリーン
+            else:
+                color = "background-color: #d8e8ff;"  # パステルブルー
 
-        # 🔽 行全体に同じ色を適用
+        # 行全体に適用
         return [color] * len(row)
 
     except Exception:
         return [""] * len(row)
+        
 # --- スタイル適用 ---
 styled = (
     best_df.style
