@@ -92,6 +92,3 @@ st.markdown(f"## 🏆 {current_age}歳 基準・目標付き最高記録一覧�
 st.dataframe(best_df, use_container_width=True)
 
 
-
-st.markdown(f"## 🏆 {title_age}基準・目標付き最高記録一覧（タイム系は最小値）")
-st.dataframe(best_df, use_container_width=True)
