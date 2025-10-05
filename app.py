@@ -98,16 +98,6 @@ best_df = best_df.sort_values("種目", key=lambda x: x.map(order_map)).reset_in
 
 import numpy as np
 
-# --- 数値書式を小数点第2位に統一 ---
-for col in ["最高記録", "基準値", "目標値"]:
-    if col in best_df.columns:
-        best_df[col] = (
-            pd.to_numeric(best_df[col], errors="coerce")
-            .round(2)
-            .apply(lambda x: f"{x:.2f}" if pd.notna(x) else "")
-        )
-
-
 
 # --- 色付け関数 ---
 def highlight_rows(row):
