@@ -50,12 +50,31 @@ for event, group in df_long.groupby("種目"):
 
 best_df = pd.DataFrame(best_list)
 
-# --- 表示したい列順（スプレッドシート準拠） ---
-column_order = [
-    "身長","体重","4mダッシュ", "50m走", "1.3km",
-    "立ち幅跳び", "握力（右）", "握力（左）",
-    "パントキック", "ゴールキック", "ソフトボール投げ"
-]
+# --- シートの列順どおりに最高記録を並べる ---
+headers = ws.row_values(1)
+
+# タイム系は最小値、それ以外は最大値
+TIME_METRICS = ["1.3km", "4mダッシュ", "50m走"]
+
+best_rows = []
+for col in headers:
+    if col in ["日付", "年齢"]:  # 記録以外の列はスキップ
+        continue
+
+    s = pd.to_numeric(df[col], errors="coerce")
+    if col in TIME_METRICS:
+        best_val = s.min(skipna=True)
+    else:
+        best_val = s.max(skipna=True)
+
+    if pd.notna(best_val):
+        best_rows.append({"種目": col, "最高記録": best_val})
+
+# DataFrame化（列順＝シート順）
+best_df = pd.DataFrame(best_rows)
+
+st.markdown("## 🏆 種目別 最高記録一覧（タイム系は最小値）")
+st.dataframe(best_df, use_container_width=True)
 
 # DataFrame の列をこの順に並べ替え（存在する列だけ抽出）
 df = df[[col for col in column_order if col in df.columns]]
