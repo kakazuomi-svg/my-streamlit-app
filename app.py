@@ -99,7 +99,7 @@ best_df = best_df.sort_values("種目", key=lambda x: x.map(order_map)).reset_in
 import numpy as np
 
 
-# --- 色付け関数 ---
+# --- 色付け関数（行ごと色分け） ---
 def highlight_rows(row):
     try:
         best = row["最高記録"]
@@ -107,7 +107,7 @@ def highlight_rows(row):
         goal = row["目標値"]
 
         if np.isnan(best) or np.isnan(base) or np.isnan(goal):
-            return [""] * len(row)  # 欠損時は無色
+            return [""] * len(row)
 
         if best < base:
             color = "background-color: #ffd6d6;"  # パステルレッド
@@ -116,11 +116,11 @@ def highlight_rows(row):
         else:
             color = "background-color: #d8e8ff;"  # パステルブルー
 
-        # 「最高記録」列だけ色をつける
-        return [color if c == "最高記録" else "" for c in row.index]
+        # 🔽 行全体に同じ色を適用
+        return [color] * len(row)
+
     except Exception:
         return [""] * len(row)
-
 # --- スタイル適用 ---
 styled = (
     best_df.style
