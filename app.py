@@ -46,11 +46,37 @@ for event, group in df_long.groupby("種目"):
 
 best_df = pd.DataFrame(best_list)
 
-# --- シートの列順どおりに並べ替え ---
-column_order = [c for c in headers if c in best_df["種目"].values and c not in exclude_cols]
-best_df["種目"] = pd.Categorical(best_df["種目"], categories=column_order, ordered=True)
-best_df = best_df.sort_values("種目").reset_index(drop=True)
 
-# --- 表示（ここだけ残す！） ---
-st.subheader("🏆 種目別 最高記録一覧（タイム系は最小値）")
+# --- 最新の年齢を取得（最後に入力された値を使う） ---
+try:
+    current_age = int(df["年齢"].dropna().iloc[-1])
+except Exception:
+    current_age = None
+
+if current_age:
+    # --- 基準値シート読み込み ---
+    ws_base = client.open("soccer_training").worksheet("基準値")
+    base_data = ws_base.get_all_records()
+    df_base = pd.DataFrame(base_data)
+
+    # --- 目標値シート読み込み ---
+    ws_goal = client.open("soccer_training").worksheet("目標値")
+    goal_data = ws_goal.get_all_records()
+    df_goal = pd.DataFrame(goal_data)
+
+    # 年齢で該当行を取得
+    base_row = df_base[df_base["年齢"] == current_age].iloc[0]
+    goal_row = df_goal[df_goal["年齢"] == current_age].iloc[0]
+
+    # 「年齢」列を除いた列名でループ
+    base_dict = base_row.drop(labels=["年齢"]).to_dict()
+    goal_dict = goal_row.drop(labels=["年齢"]).to_dict()
+
+    # --- best_df に基準値・目標値をマージ ---
+    best_df["基準値"] = best_df["種目"].map(base_dict)
+    best_df["目標値"] = best_df["種目"].map(goal_dict)
+
+# --- 表示 ---
+st.subheader(f"🏆 {current_age}歳 基準・目標付き最高記録一覧（タイム系は最小値）")
 st.dataframe(best_df, use_container_width=True)
+
