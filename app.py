@@ -11,14 +11,15 @@ creds = Credentials.from_service_account_info(st.secrets["google_service_account
 client = gspread.authorize(creds)
 ws = client.open("soccer_training").worksheet("シート1")
 
-# --- シート読み込み ---
-records = ws.get_all_records()
+# --- データ読み込み ---
+data = ws.get_all_records()
+df = pd.DataFrame(data)
 
-if not records:
-    st.warning("まだデータがありません。")
-    st.stop()
+# ★ この2行を追加 ★
+headers = ws.row_values(1)  # 1行目（ヘッダー）を取得
+df = df[headers]             # スプレッドシートと同じ列順に並べ替え
 
-df = pd.DataFrame(records)
+st.dataframe(df)
 
 # --- 不要な列を除外 ---
 exclude_cols = ["メモ", "年齢", "リフティングレベル", "リフティング時間","疲労度" ]
