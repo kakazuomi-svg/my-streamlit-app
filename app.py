@@ -96,8 +96,36 @@ for col in ["最高記録", "基準値", "目標値"]:
 best_df["種目"] = pd.Categorical(best_df["種目"], categories=column_order, ordered=True)
 best_df = best_df.sort_values("種目", key=lambda x: x.map(order_map)).reset_index(drop=True)
 
-# --- 表示 ---
+import numpy as np
+
+# --- 色付け関数 ---
+def highlight_rows(row):
+    try:
+        best = row["最高記録"]
+        base = row["基準値"]
+        goal = row["目標値"]
+
+        if np.isnan(best) or np.isnan(base) or np.isnan(goal):
+            return [""] * len(row)  # 欠損時は無色
+
+        if best < base:
+            color = "background-color: #ffd6d6;"  # パステルレッド
+        elif best < goal:
+            color = "background-color: #d8f5d8;"  # パステルグリーン
+        else:
+            color = "background-color: #d8e8ff;"  # パステルブルー
+
+        # 「最高記録」列だけ色をつける
+        return [color if c == "最高記録" else "" for c in row.index]
+    except Exception:
+        return [""] * len(row)
+
+# --- スタイル適用 ---
+styled = best_df.style.apply(highlight_rows, axis=1)
+
+# --- 表示（タイトルも統一） ---
 st.markdown(f"## 🏆 {current_age}歳 基準・目標付き最高記録一覧（タイム系は最小値）")
-st.dataframe(best_df, use_container_width=True)
+st.dataframe(styled, use_container_width=True)
+
 
 
