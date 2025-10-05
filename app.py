@@ -14,25 +14,17 @@ creds = Credentials.from_service_account_info(st.secrets["google_service_account
 client = gspread.authorize(creds)
 ws = client.open("soccer_training").worksheet("シート1")
 
+# --- シート読み込み ---
+import pandas as pd
 
-
-# --- 対象種目 ---
-events = [
-    "4mダッシュ",
-    "50m走",
-    "1.3km",
-    "立ち幅跳び",
-    "握力（右）",
-    "握力（左）",
-    "パントキック",
-    "ゴールキック",
-    "ソフトボール投げ",
-]
+records = ws.get_all_records()
 
 # 空シート対策
-if df.empty:
+if not records:
     st.warning("まだデータがありません。")
     st.stop()
+
+df = pd.DataFrame(records)
 
 # --- 横型 → 縦型に変換 ---
 # 「日付」列を除く全ての列を melt で縦にまとめる
