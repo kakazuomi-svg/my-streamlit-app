@@ -2,15 +2,23 @@ import streamlit as st
 import pandas as pd
 import gspread
 from google.oauth2.service_account import Credentials
+import os
 
 st.title("🏃‍♀️ 種目別ベスト一覧（スプレッドシート連動版）")
 
 # --- Google認証 ---
-SCOPE = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-creds = Credentials.from_service_account_file("credentials.json", scopes=SCOPE)
+SCOPE = [
+    "https://spreadsheets.google.com/feeds",
+    "https://www.googleapis.com/auth/drive",
+]
+
+# credentials.json の場所を自動検出（ローカルでもCloudでもOK）
+current_dir = os.path.dirname(os.path.abspath(__file__))
+cred_path = os.path.join(current_dir, "credentials.json")
+
+creds = Credentials.from_service_account_file(cred_path, scopes=SCOPE)
 client = gspread.authorize(creds)
 ws = client.open("soccer_training").worksheet("シート1")
-
 # --- 対象種目 ---
 events = [
     "4mダッシュ",
