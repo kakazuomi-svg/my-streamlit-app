@@ -82,10 +82,19 @@ if current_age:
 # --- タイトル書式統一（None回避） ---
 title_age = f"{current_age}歳 " if current_age else ""
 
+# --- 並び順マップを作る ---
+headers = ws.row_values(1)
+column_order = [c for c in headers if c in best_df["種目"].values and c not in exclude_cols]
+order_map = {v: i for i, v in enumerate(column_order)}
+
 # --- 書式を小数点2位に統一 ---
 for col in ["最高記録", "基準値", "目標値"]:
     if col in best_df.columns:
         best_df[col] = pd.to_numeric(best_df[col], errors="coerce").round(2)
+
+# --- 種目の順番を再指定 ---
+best_df["種目"] = pd.Categorical(best_df["種目"], categories=column_order, ordered=True)
+best_df = best_df.sort_values("種目", key=lambda x: x.map(order_map)).reset_index(drop=True)
 
 # --- 表示 ---
 st.markdown(f"## 🏆 {current_age}歳 基準・目標付き最高記録一覧（タイム系は最小値）")
