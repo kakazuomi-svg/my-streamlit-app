@@ -17,8 +17,6 @@ df = pd.DataFrame(data)
 headers = ws.row_values(1)
 df = df[headers]
 
-st.dataframe(df)
-
 # --- 不要な列を除外 ---
 exclude_cols = ["メモ", "年齢", "リフティングレベル", "リフティング時間", "疲労度"]
 cols_to_use = [c for c in df.columns if c not in exclude_cols]
