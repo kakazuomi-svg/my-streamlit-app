@@ -29,21 +29,24 @@ events = [
     "ソフトボール投げ",
 ]
 
-# --- シート読み込み ---
-df = pd.DataFrame(ws.get_all_records())
+# 空シート対策
+if df.empty:
+    st.warning("まだデータがありません。")
+    st.stop()
 
-# ここでは列名が「種目」「最高記録」「基準値」「目標値」になっている想定
-# 存在しない場合は新規に作る
-for col in ["種目", "最高記録", "基準値", "目標値"]:
-    if col not in df.columns:
-        df[col] = ""
+# --- 横型 → 縦型に変換 ---
+# 「日付」列を除く全ての列を melt で縦にまとめる
+df_long = df.melt(id_vars=["日付"], var_name="種目", value_name="記録")
 
-# --- 種目一覧（固定表示） ---
-events = [
-    "4mダッシュ", "50m走", "1.3km", "立ち幅跳び",
-    "握力（右）", "握力（左）", "パントキック",
-    "ゴールキック", "ソフトボール投げ"
-]
+# 数値変換（文字列や空白を除外）
+df_long["記録"] = pd.to_numeric(df_long["記録"], errors="coerce")
+
+# --- 種目ごとに最大値を抽出 ---
+best_df = df_long.groupby("種目", as_index=False)["記録"].max()
+
+# --- 表示 ---
+st.subheader("🏆 種目別 最高記録一覧")
+st.dataframe(best_df, use_container_width=True)
 
 # --- スプレッドシート読み込み ---
 df = pd.DataFrame(ws.get_all_records())
