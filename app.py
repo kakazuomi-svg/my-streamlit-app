@@ -7,7 +7,7 @@ st.title("🏃‍♀️ 種目別ベスト一覧（スプレッドシート連�
 
 # --- Google認証 ---
 SCOPE = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-creds = Credentials.from_service_account_info(st.secrets["google_service_account"], scopes=SCOPE)
+creds = Credentials.from_service_account_file("credentials.json", scopes=SCOPE)
 client = gspread.authorize(creds)
 ws = client.open("soccer_training").worksheet("シート1")
 
