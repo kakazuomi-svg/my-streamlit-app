@@ -1,9 +1,17 @@
 import streamlit as st
 import pandas as pd
+import gspread
+from google.oauth2.service_account import Credentials
 
-st.title("🏃‍♀️ 種目別ベスト一覧")
+st.title("🏃‍♀️ 種目別ベスト一覧（スプレッドシート連動版）")
 
-# 種目リスト（リフティング除外）
+# --- Google認証 ---
+SCOPE = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+creds = Credentials.from_service_account_info(st.secrets["google_service_account"], scopes=SCOPE)
+client = gspread.authorize(creds)
+ws = client.open("soccer_training").worksheet("シート1")
+
+# --- 対象種目 ---
 events = [
     "4mダッシュ",
     "50m走",
@@ -16,17 +24,31 @@ events = [
     "ソフトボール投げ",
 ]
 
-# ダミーデータ（後でシート連携に置き換え予定）
-data = []
-for e in events:
-    row = {
-        "種目": e,
-        "最高記録": 0,
-        "基準値": 0,
-        "目標値": 0,
-    }
-    data.append(row)
+# --- シート読み込み ---
+df = pd.DataFrame(ws.get_all_records())
 
-df = pd.DataFrame(data, columns=["種目", "最高記録", "基準値", "目標値"])
+# ここでは列名が「種目」「最高記録」「基準値」「目標値」になっている想定
+# 存在しない場合は新規に作る
+for col in ["種目", "最高記録", "基準値", "目標値"]:
+    if col not in df.columns:
+        df[col] = ""
 
-st.dataframe(df, use_container_width=True)
+# --- 必要な種目だけ抽出 ---
+df = df[df["種目"].isin(events)].copy()
+
+# --- サイドバー入力 ---
+st.sidebar.header("📏 基準値・目標値の設定")
+for i, row in df.iterrows():
+    base = st.sidebar.number_input(f"{row['種目']} 基準値", value=float(row["基準値"]) if row["基準値"] else 0.0, step=0.1, key=f"base_{i}")
+    target = st.sidebar.number_input(f"{row['種目']} 目標値", value=float(row["目標値"]) if row["目標値"] else 0.0, step=0.1, key=f"target_{i}")
+    df.at[i, "基準値"] = base
+    df.at[i, "目標値"] = target
+
+# --- 表表示 ---
+st.dataframe(df[["種目", "最高記録", "基準値", "目標値"]], use_container_width=True)
+
+# --- 保存ボタン ---
+if st.button("💾 スプレッドシートに保存"):
+    ws.clear()
+    ws.update([df.columns.values.tolist()] + df.values.tolist(), value_input_option="USER_ENTERED")
+    st.success("スプレッドシートに保存しました！")
