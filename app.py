@@ -168,9 +168,14 @@ chart_data = chart_data.sort_values("日付")
 import altair as alt
 
 # --- 折れ線グラフ描画（Altair版） ---
+import altair as alt
+
 if not chart_data.empty:
     chart_data["日付"] = pd.to_datetime(chart_data["日付"], errors="coerce")
     chart_data["記録"] = pd.to_numeric(chart_data["記録"], errors="coerce")
+
+    # Nullを無視（NaN削除）
+    chart_data = chart_data.dropna(subset=["記録"])
 
     line = (
         alt.Chart(chart_data)
@@ -178,9 +183,13 @@ if not chart_data.empty:
         .encode(
             x=alt.X("日付:T", title="日付"),
             y=alt.Y("記録:Q", title="記録", scale=alt.Scale(zero=False)),
+            color=alt.value("#1f77b4"),  # 固定色
             tooltip=["日付:T", "記録:Q"]
         )
         .properties(height=350, width="container")
+        # 🔽 これがポイント！ つなげ方を明示
+        .transform_calculate(group="'A'")
+        .encode(detail="group:N")
     )
 
     st.altair_chart(line, use_container_width=True)
