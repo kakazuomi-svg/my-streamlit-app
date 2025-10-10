@@ -144,5 +144,26 @@ styled = (
 st.markdown(f"## 🏆 {current_age}歳 基準・目標付き最高記録一覧（タイム系は最小値）")
 st.dataframe(styled, use_container_width=True)
 
+# --- グラフ表示セクション（ここから追記！） ---
+st.markdown("## 📈 種目別 推移グラフ")
 
+# ドロップダウンで選択
+selected_event = st.selectbox(
+    "グラフを見たい種目を選んでください👇",
+    [c for c in column_order if c in df_long["種目"].unique()],
+    index=0
+)
 
+# 選択されたデータ抽出
+chart_data = df_long[df_long["種目"] == selected_event].copy()
+chart_data = chart_data.sort_values("日付")
+
+# --- 折れ線グラフ描画 ---
+if not chart_data.empty:
+    st.line_chart(
+        chart_data.set_index("日付")["記録"],
+        use_container_width=True,
+        height=350
+    )
+else:
+    st.info("この種目のデータがありません。")
