@@ -189,5 +189,23 @@ if not chart_data.empty:
             x=alt.X(
                 "日付:T",
                 title="日付",
-                scale=alt.Scale(domain=x_domain)_
+                scale=alt.Scale(domain=x_domain)  # ← X軸固定
+            ),
+            y=alt.Y(
+                "記録:Q",
+                title="記録",
+                scale=alt.Scale(zero=False, reverse=reverse_scale)  # ← タイム系だけ反転
+            ),
+            tooltip=["日付:T", "記録:Q"],
+            color=alt.value("#1f77b4")
+        )
+        .properties(height=350, width="container")
+        .transform_calculate(group="'A'")
+        .encode(detail="group:N")
+    )
+
+    st.altair_chart(line, use_container_width=True)
+else:
+    st.info("この種目のデータがありません。")
+
 
