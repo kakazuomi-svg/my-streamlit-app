@@ -158,6 +158,13 @@ selected_event = st.selectbox(
 chart_data = df_long[df_long["種目"] == selected_event].copy()
 chart_data = chart_data.sort_values("日付")
 
+# 日付をdatetime型に変換
+chart_data["日付"] = pd.to_datetime(chart_data["日付"], errors="coerce")
+
+# 日付順にソート
+chart_data = chart_data.sort_values("日付")
+
+
 # --- 折れ線グラフ描画 ---
 if not chart_data.empty:
     st.line_chart(
