@@ -182,11 +182,22 @@ if not chart_data.empty:
     time_events = ["4mダッシュ", "50m走", "1.3km"]
     reverse_scale = True if selected_event in time_events else False
 
-    # --- 基準値を取得（選択中の種目に対応） ---
-    base_value = best_df.loc[best_df["種目"] == selected_event, "基準値"]
-    base_value = float(base_value.values[0]) if not base_value.empty else None
+    # --- 各年齢の目標値を取得 ---
+    goal_values = {}
+    for age in [10, 11, 12]:
+        goal_row = df_goal[df_goal["年齢"] == age]
+        if not goal_row.empty and selected_event in goal_row.columns:
+            val = goal_row[selected_event].values[0]
+            try:
+                goal_values[age] = float(val)
+            except:
+                # 「7分30秒」みたいな表記がある場合の簡易処理
+                if isinstance(val, str) and "分" in val and "秒" in val:
+                    parts = val.replace("秒", "").split("分")
+                    val = int(parts[0]) + int(parts[1]) / 60
+                    goal_values[age] = val
 
-    # --- 折れ線（記録の推移） ---
+    # --- 折れ線（記録推移） ---
     line = (
         alt.Chart(chart_data)
         .mark_line(point=True, color="#1f77b4")
@@ -195,33 +206,40 @@ if not chart_data.empty:
                 "yearmonth(日付):T",
                 title="日付（年月）",
                 scale=alt.Scale(domain=x_domain),
-                axis=alt.Axis(format="%Y年%m月", labelAngle=-40)
+                axis=alt.Axis(format="%Y年%m月", labelAngle=-40),
             ),
             y=alt.Y(
                 "記録:Q",
                 title="記録",
-                scale=alt.Scale(zero=False, reverse=reverse_scale)
+                scale=alt.Scale(zero=False, reverse=reverse_scale),
             ),
             tooltip=[
                 alt.Tooltip("yearmonthdate(日付):T", title="日付", format="%Y年%m月%d日"),
-                alt.Tooltip("記録:Q", title="記録")
-            ]
+                alt.Tooltip("記録:Q", title="記録"),
+            ],
         )
         .properties(height=350, width="container")
         .transform_calculate(group="'A'")
         .encode(detail="group:N")
     )
 
-    # --- 基準値ライン（水平線） ---
-    if base_value is not None:
-        base_line = (
-            alt.Chart(pd.DataFrame({"基準値": [base_value]}))
-            .mark_rule(color="#66bb6a", strokeDash=[6, 4], size=2)
-            .encode(y=alt.Y("基準値:Q"))
+    # --- 年齢別目標ライン ---
+    goal_colors = {10: "#66bb6a", 11: "#ffa726", 12: "#ef5350"}  # 緑, オレンジ, 赤
+    goal_lines = []
+    for age, val in goal_values.items():
+        df_tmp = pd.DataFrame({"目標値": [val]})
+        rule = (
+            alt.Chart(df_tmp)
+            .mark_rule(color=goal_colors[age], strokeDash=[6, 3], size=2)
+            .encode(y=alt.Y("目標値:Q"))
+            .properties(title=f"{age}歳目標値")
         )
-        chart = line + base_line
-    else:
-        chart = line
+        goal_lines.append(rule)
+
+    # --- すべてのレイヤーを結合 ---
+    chart = line
+    for g in goal_lines:
+        chart += g
 
     st.altair_chart(chart, use_container_width=True)
 
