@@ -187,16 +187,20 @@ if not chart_data.empty:
         .mark_line(point=True)
         .encode(
             x=alt.X(
-                "日付:T",
-                title="日付",
-                scale=alt.Scale(domain=x_domain)  # ← X軸固定
+                "yearmonth(日付):T",
+                title="日付（年月）",
+                scale=alt.Scale(domain=x_domain),
+                axis=alt.Axis(format="%Y年%m月", labelAngle=-40)  # ← 日本語形式！
             ),
             y=alt.Y(
                 "記録:Q",
                 title="記録",
-                scale=alt.Scale(zero=False, reverse=reverse_scale)  # ← タイム系だけ反転
+                scale=alt.Scale(zero=False, reverse=reverse_scale)
             ),
-            tooltip=["日付:T", "記録:Q"],
+            tooltip=[
+                alt.Tooltip("yearmonthdate(日付):T", title="日付", format="%Y年%m月%d日"),
+                alt.Tooltip("記録:Q", title="記録")
+            ],
             color=alt.value("#1f77b4")
         )
         .properties(height=350, width="container")
@@ -207,5 +211,6 @@ if not chart_data.empty:
     st.altair_chart(line, use_container_width=True)
 else:
     st.info("この種目のデータがありません。")
+
 
 
