@@ -173,25 +173,21 @@ import altair as alt
 if not chart_data.empty:
     chart_data["日付"] = pd.to_datetime(chart_data["日付"], errors="coerce")
     chart_data["記録"] = pd.to_numeric(chart_data["記録"], errors="coerce")
-
-    # Nullを無視（NaN削除）
     chart_data = chart_data.dropna(subset=["記録"])
+
+    # --- X軸固定範囲（2025年4月〜2028年3月） ---
+    x_domain = [pd.Timestamp("2025-04-01"), pd.Timestamp("2028-03-31")]
+
+    # --- タイム系は反転Y軸に ---
+    time_events = ["4mダッシュ", "50m走", "1.3km"]
+    reverse_scale = True if selected_event in time_events else False
 
     line = (
         alt.Chart(chart_data)
         .mark_line(point=True)
         .encode(
-            x=alt.X("日付:T", title="日付"),
-            y=alt.Y("記録:Q", title="記録", scale=alt.Scale(zero=False)),
-            color=alt.value("#1f77b4"),  # 固定色
-            tooltip=["日付:T", "記録:Q"]
-        )
-        .properties(height=350, width="container")
-        # 🔽 これがポイント！ つなげ方を明示
-        .transform_calculate(group="'A'")
-        .encode(detail="group:N")
-    )
+            x=alt.X(
+                "日付:T",
+                title="日付",
+                scale=alt.Scale(domain=x_domain)_
 
-    st.altair_chart(line, use_container_width=True)
-else:
-    st.info("この種目のデータがありません。")
