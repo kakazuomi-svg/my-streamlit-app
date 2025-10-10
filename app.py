@@ -182,15 +182,20 @@ if not chart_data.empty:
     time_events = ["4mダッシュ", "50m走", "1.3km"]
     reverse_scale = True if selected_event in time_events else False
 
+    # --- 基準値を取得（選択中の種目に対応） ---
+    base_value = best_df.loc[best_df["種目"] == selected_event, "基準値"]
+    base_value = float(base_value.values[0]) if not base_value.empty else None
+
+    # --- 折れ線（記録の推移） ---
     line = (
         alt.Chart(chart_data)
-        .mark_line(point=True)
+        .mark_line(point=True, color="#1f77b4")
         .encode(
             x=alt.X(
                 "yearmonth(日付):T",
                 title="日付（年月）",
                 scale=alt.Scale(domain=x_domain),
-                axis=alt.Axis(format="%Y年%m月", labelAngle=-40)  # ← 日本語形式！
+                axis=alt.Axis(format="%Y年%m月", labelAngle=-40)
             ),
             y=alt.Y(
                 "記録:Q",
@@ -200,17 +205,25 @@ if not chart_data.empty:
             tooltip=[
                 alt.Tooltip("yearmonthdate(日付):T", title="日付", format="%Y年%m月%d日"),
                 alt.Tooltip("記録:Q", title="記録")
-            ],
-            color=alt.value("#1f77b4")
+            ]
         )
         .properties(height=350, width="container")
         .transform_calculate(group="'A'")
         .encode(detail="group:N")
     )
 
-    st.altair_chart(line, use_container_width=True)
+    # --- 基準値ライン（水平線） ---
+    if base_value is not None:
+        base_line = (
+            alt.Chart(pd.DataFrame({"基準値": [base_value]}))
+            .mark_rule(color="#66bb6a", strokeDash=[6, 4], size=2)
+            .encode(y=alt.Y("基準値:Q"))
+        )
+        chart = line + base_line
+    else:
+        chart = line
+
+    st.altair_chart(chart, use_container_width=True)
+
 else:
     st.info("この種目のデータがありません。")
-
-
-
