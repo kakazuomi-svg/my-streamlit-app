@@ -165,12 +165,24 @@ chart_data["日付"] = pd.to_datetime(chart_data["日付"], errors="coerce")
 chart_data = chart_data.sort_values("日付")
 
 
-# --- 折れ線グラフ描画 ---
+import altair as alt
+
+# --- 折れ線グラフ描画（Altair版） ---
 if not chart_data.empty:
-    st.line_chart(
-        chart_data.set_index("日付")["記録"],
-        use_container_width=True,
-        height=350
+    chart_data["日付"] = pd.to_datetime(chart_data["日付"], errors="coerce")
+    chart_data["記録"] = pd.to_numeric(chart_data["記録"], errors="coerce")
+
+    line = (
+        alt.Chart(chart_data)
+        .mark_line(point=True)
+        .encode(
+            x=alt.X("日付:T", title="日付"),
+            y=alt.Y("記録:Q", title="記録", scale=alt.Scale(zero=False)),
+            tooltip=["日付:T", "記録:Q"]
+        )
+        .properties(height=350, width="container")
     )
+
+    st.altair_chart(line, use_container_width=True)
 else:
     st.info("この種目のデータがありません。")
