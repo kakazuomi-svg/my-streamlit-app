@@ -232,7 +232,7 @@ if not chart_data.empty:
             alt.Chart(df_tmp)
             .mark_rule(color=goal_colors[age], strokeDash=[6, 3], size=2)
             .encode(y=alt.Y("目標値:Q"))
-            .properties(title=f"{age}歳目標値")
+            .properties(title=f"{age}歳レベル")
         )
         goal_lines.append(rule)
 
