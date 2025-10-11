@@ -182,25 +182,20 @@ if not chart_data.empty:
     time_events = ["4mダッシュ", "50m走", "1.3km"]
     reverse_scale = True if selected_event in time_events else False
 
-    # --- 各年齢の目標値を取得 ---
-    goal_values = {}
+    # --- 基準値＆目標値を年齢別に取得 ---
+    base_values, goal_values = {}, {}
     for age in [10, 11, 12]:
+        base_row = df_base[df_base["年齢"] == age]
         goal_row = df_goal[df_goal["年齢"] == age]
+        if not base_row.empty and selected_event in base_row.columns:
+            base_values[age] = pd.to_numeric(base_row[selected_event], errors="coerce").values[0]
         if not goal_row.empty and selected_event in goal_row.columns:
-            val = goal_row[selected_event].values[0]
-            try:
-                goal_values[age] = float(val)
-            except:
-                # 「7分30秒」みたいな表記がある場合の簡易処理
-                if isinstance(val, str) and "分" in val and "秒" in val:
-                    parts = val.replace("秒", "").split("分")
-                    val = int(parts[0]) + int(parts[1]) / 60
-                    goal_values[age] = val
+            goal_values[age] = pd.to_numeric(goal_row[selected_event], errors="coerce").values[0]
 
     # --- 折れ線（記録推移） ---
     line = (
         alt.Chart(chart_data)
-        .mark_line(point=True, color="#1f77b4")
+        .mark_line(point=True, color="#1f77b4", size=2)
         .encode(
             x=alt.X(
                 "yearmonth(日付):T",
@@ -219,29 +214,41 @@ if not chart_data.empty:
             ],
         )
         .properties(height=350, width="container")
-        .transform_calculate(group="'A'")
-        .encode(detail="group:N")
     )
 
-    # --- 年齢別目標ライン ---
-    goal_colors = {10: "#66bb6a", 11: "#ffa726", 12: "#ef5350"}  # 緑, オレンジ, 赤
-    goal_lines = []
-    for age, val in goal_values.items():
-        df_tmp = pd.DataFrame({"目標値": [val]})
-        rule = (
-            alt.Chart(df_tmp)
-            .mark_rule(color=goal_colors[age], strokeDash=[6, 3], size=2)
-            .encode(y=alt.Y("目標値:Q"))
-            .properties(title=f"{age}歳目標レベル")
-        )
-        goal_lines.append(rule)
+    # --- 年齢別の色設定 ---
+    colors_goal = {10: "#66bb6a", 11: "#ffa726", 12: "#ef5350"}  # 濃い目
+    colors_base = {10: "#b9e3b4", 11: "#ffd7a0", 12: "#f6a9a9"}  # 薄め
 
-    # --- すべてのレイヤーを結合 ---
-    chart = line
-    for g in goal_lines:
-        chart += g
+    # --- 基準値・目標値の水平ライン ---
+    layers = [line]
+
+    for age in [10, 11, 12]:
+        # 基準値（薄）
+        if age in base_values:
+            df_base_tmp = pd.DataFrame({"基準値": [base_values[age]]})
+            base_line = (
+                alt.Chart(df_base_tmp)
+                .mark_rule(color=colors_base[age], strokeDash=[4, 3], size=2)
+                .encode(y=alt.Y("基準値:Q"))
+            )
+            layers.append(base_line)
+
+        # 目標値（濃）
+        if age in goal_values:
+            df_goal_tmp = pd.DataFrame({"目標値": [goal_values[age]]})
+            goal_line = (
+                alt.Chart(df_goal_tmp)
+                .mark_rule(color=colors_goal[age], strokeDash=[6, 4], size=2)
+                .encode(y=alt.Y("目標値:Q"))
+            )
+            layers.append(goal_line)
+
+    # --- レイヤーを統合 ---
+    chart = alt.layer(*layers)
 
     st.altair_chart(chart, use_container_width=True)
 
 else:
     st.info("この種目のデータがありません。")
+
