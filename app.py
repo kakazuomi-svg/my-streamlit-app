@@ -29,6 +29,30 @@ df_long = df.melt(
     value_name="記録"
 )
 
+
+# --- 💡ここに追加！（リフティング時間変換） ---
+def convert_min_dot_sec(x):
+    try:
+        x = str(x).strip()
+        if "." in x:
+            mins, secs = x.split(".")
+            mins = int(mins)
+            secs = int(secs)
+            return mins + secs / 60
+        else:
+            return float(x)
+    except:
+        return None
+
+# リフティング時間だけ変換（例：15.30 → 15.5）
+df_long.loc[df_long["種目"] == "リフティング時間", "記録"] = (
+    df_long.loc[df_long["種目"] == "リフティング時間", "記録"].apply(convert_min_dot_sec)
+)
+
+# --- 数値変換 ---
+df_long["記録"] = pd.to_numeric(df_long["記録"], errors="coerce")
+
+
 # --- 数値変換 ---
 df_long["記録"] = pd.to_numeric(df_long["記録"], errors="coerce")
 
