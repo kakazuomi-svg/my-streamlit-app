@@ -220,9 +220,36 @@ if not chart_data.empty:
     colors = {10: "#66bb6a", 11: "#ffa726", 12: "#ef5350"}  # 緑, オレンジ, 赤
 
     # --- 折れ線（記録推移） ---
+   import altair as alt
+
+if not chart_data.empty:
+    chart_data["日付"] = pd.to_datetime(chart_data["日付"], errors="coerce")
+    chart_data["記録"] = pd.to_numeric(chart_data["記録"], errors="coerce")
+    chart_data = chart_data.dropna(subset=["記録"])
+
+    # --- 🩵 リフティングだけ横軸ゆったり（5年スパン） ---
+    if selected_event == "リフティング時間":
+        x_min = pd.Timestamp("2025-01-01") - pd.DateOffset(months=6)
+        x_max = pd.Timestamp("2030-01-01") + pd.DateOffset(months=6)
+    else:
+        x_min = pd.Timestamp("2025-04-01")
+        x_max = pd.Timestamp("2028-03-31")
+    x_domain = [x_min, x_max]
+
+    # --- タイム系は反転Y軸に ---
+    time_events = ["4mダッシュ", "50m走", "1.3km", "リフティング時間"]
+    reverse_scale = True if selected_event in time_events else False
+
+    # --- 表示ライン選択 ---
+    line_type = st.selectbox("表示するラインを選んでください👇", ["なし", "基準値", "目標値"], index=2)
+
+    # --- 色設定 ---
+    colors = {10: "#66bb6a", 11: "#ffa726", 12: "#ef5350"}
+
+    # --- 📈 折れ線（スムージング＋点） ---
     line = (
         alt.Chart(chart_data)
-        .mark_line(point=True, color="#1f77b4", size=2)
+        .mark_line(point=alt.OverlayMarkDef(size=40), interpolate="monotone", color="#1f77b4", size=2)
         .encode(
             x=alt.X(
                 "yearmonth(日付):T",
@@ -240,13 +267,13 @@ if not chart_data.empty:
                 alt.Tooltip("記録:Q", title="記録"),
             ],
         )
-        .properties(height=350, width="container")
+        .properties(height=400, width=900)  # ← 横幅拡大！
     )
 
-    # --- レイヤー構築 ---
+    # --- レイヤー作成 ---
     layers = [line]
 
-    # --- 選択に応じてライン追加 ---
+    # --- ライン（基準値 or 目標値） ---
     if line_type == "基準値":
         for age in [10, 11, 12]:
             base_row = df_base[df_base["年齢"] == age]
@@ -276,7 +303,3 @@ if not chart_data.empty:
     # --- 結合＆表示 ---
     chart = alt.layer(*layers)
     st.altair_chart(chart, use_container_width=True)
-
-else:
-    st.info("この種目のデータがありません。")
-
