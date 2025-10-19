@@ -252,18 +252,22 @@ if not chart_data.empty:
     # --- 色設定 ---
     colors = {10: "#66bb6a", 11: "#ffa726", 12: "#ef5350"}
 
-    # --- 📈 折れ線（スムージング＋点） ---
+       # --- 📈 折れ線（スムージング＋点） ---
     line = (
         alt.Chart(chart_data)
-        .mark_line(point=alt.OverlayMarkDef(size=40), interpolate="monotone", color="#1f77b4", size=2)
+        .mark_line(
+            point=alt.OverlayMarkDef(size=40),
+            interpolate="monotone",
+            color="#1f77b4",
+            size=2
+        )
         .encode(
-
-        　　x = alt.X(
-    　　　　　　"日付:T",  # yearmonthをやめて生の日付で指定
-    　　　　　　title="日付（年月）",
-    　　　　　　scale=alt.Scale(domain=x_domain),
-    　　　　　　axis=alt.Axis(format="%Y年%m月", labelAngle=-40),
-　　　　　　)
+            x=alt.X(
+                "日付:T",  # yearmonthをやめて生の日付で指定
+                title="日付（年月）",
+                scale=alt.Scale(domain=x_domain),
+                axis=alt.Axis(format="%Y年%m月", labelAngle=-40),
+            ),
             y=alt.Y(
                 "記録:Q",
                 title="記録",
