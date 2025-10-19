@@ -220,7 +220,7 @@ if not chart_data.empty:
     colors = {10: "#66bb6a", 11: "#ffa726", 12: "#ef5350"}  # 緑, オレンジ, 赤
 
     # --- 折れ線（記録推移） ---
-   import altair as alt
+import altair as alt
 
 if not chart_data.empty:
     chart_data["日付"] = pd.to_datetime(chart_data["日付"], errors="coerce")
