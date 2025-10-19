@@ -243,23 +243,19 @@ if not chart_data.empty:
 
     x_domain = [x_min, x_max]
 
-
     # --- タイム系は反転Y軸に ---
     time_events = ["4mダッシュ", "50m走", "1.3km", "リフティング時間"]
     reverse_scale = True if selected_event in time_events else False
 
     # --- 表示ライン選択 ---
     line_type = st.selectbox(
-    "表示するラインを選んでください👇",
-    ["なし", "基準値", "目標値"],
-    index=2,
-    key="line_type"
-)
+        "表示するラインを選んでください👇",
+        ["なし", "基準値", "目標値"],
+        index=2,
+        key="line_type_main"
+    )
 
-    # --- 色設定 ---
-    colors = {10: "#66bb6a", 11: "#ffa726", 12: "#ef5350"}
-
-       # --- 📈 折れ線（スムージング＋点） ---
+    # --- 📈 折れ線（スムージング＋点） ---
     line = (
         alt.Chart(chart_data)
         .mark_line(
@@ -270,22 +266,14 @@ if not chart_data.empty:
         )
         .encode(
             x=alt.X(
-                "日付:T",  # yearmonthをやめて生の日付で指定
+                "日付:T",
                 title="日付（年月）",
                 scale=alt.Scale(domain=x_domain),
                 axis=alt.Axis(format="%Y年%m月", labelAngle=-40),
             ),
             y=alt.Y(
                 "記録:Q",
-                title="記録",
-                scale=alt.Scale(zero=False, reverse=reverse_scale),
-            ),
-            tooltip=[
-                alt.Tooltip("yearmonthdate(日付):T", title="日付", format="%Y年%m月%d日"),
-                alt.Tooltip("記録:Q", title="記録"),
-            ],
-        )
-        .properties(height=400, width=chart_width)
+
 
     # --- レイヤー作成 ---
     layers = [line]
