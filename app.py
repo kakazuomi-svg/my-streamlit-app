@@ -199,9 +199,19 @@ if not chart_data.empty:
     chart_data["記録"] = pd.to_numeric(chart_data["記録"], errors="coerce")
     chart_data = chart_data.dropna(subset=["記録"])
 
-    # --- X軸固定範囲（2025年4月〜2028年3月） ---
-    x_domain = [pd.Timestamp("2025-04-01"), pd.Timestamp("2028-03-31")]
+# --- X軸範囲設定 ---
+if selected_event == "リフティング時間":
+    # リフティングだけ少し横を広く（約8ヶ月分拡張）
+    x_min = pd.Timestamp("2025-04-01") - pd.DateOffset(months=4)
+    x_max = pd.Timestamp("2028-03-31") + pd.DateOffset(months=4)
+else:
+    # 通常（3年固定）
+    x_min = pd.Timestamp("2025-04-01")
+    x_max = pd.Timestamp("2028-03-31")
 
+x_domain = [x_min, x_max]
+
+    
     # --- タイム系は反転Y軸に ---
     time_events = ["4mダッシュ", "50m走", "1.3km"]
     reverse_scale = True if selected_event in time_events else False
