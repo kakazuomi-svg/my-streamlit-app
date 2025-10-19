@@ -228,14 +228,20 @@ if not chart_data.empty:
     chart_data["記録"] = pd.to_numeric(chart_data["記録"], errors="coerce")
     chart_data = chart_data.dropna(subset=["記録"])
 
-    # --- 🩵 リフティングだけ横軸ゆったり（5年スパン） ---
-    if selected_event == "リフティング時間":
-        x_min = pd.Timestamp("2025-01-01") - pd.DateOffset(months=6)
-        x_max = pd.Timestamp("2030-01-01") + pd.DateOffset(months=6)
-    else:
-        x_min = pd.Timestamp("2025-04-01")
-        x_max = pd.Timestamp("2028-03-31")
-    x_domain = [x_min, x_max]
+    # --- X軸範囲設定（リフティングはデータ期間にズーム＋余白） ---
+if selected_event == "リフティング時間":
+    dmin = chart_data["日付"].min()
+    dmax = chart_data["日付"].max()
+    # データの最小最大に前後2ヶ月の余白を足す
+    x_min = (dmin - pd.DateOffset(months=2))
+    x_max = (dmax + pd.DateOffset(months=2))
+    chart_width = 1200   # リフティングは横幅も広めに
+else:
+    x_min = pd.Timestamp("2025-04-01")
+    x_max = pd.Timestamp("2028-03-31")
+    chart_width = 900    # 既存の幅のまま
+
+x_domain = [x_min, x_max]
 
     # --- タイム系は反転Y軸に ---
     time_events = ["4mダッシュ", "50m走", "1.3km", "リフティング時間"]
@@ -278,8 +284,7 @@ if not chart_data.empty:
                 alt.Tooltip("記録:Q", title="記録"),
             ],
         )
-        .properties(height=400, width=900)  # ← 横幅拡大！
-    )
+        .properties(height=400, width=chart_width)
 
     # --- レイヤー作成 ---
     layers = [line]
