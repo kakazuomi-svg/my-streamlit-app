@@ -239,7 +239,7 @@ if not chart_data.empty:
     else:
         x_min = pd.Timestamp("2025-04-01")
         x_max = pd.Timestamp("2028-03-31")
-        chart_width = 900    # 既存の幅のまま
+        chart_width = 900    # 通常の幅
 
     x_domain = [x_min, x_max]
 
@@ -269,10 +269,20 @@ if not chart_data.empty:
                 "日付:T",
                 title="日付（年月）",
                 scale=alt.Scale(domain=x_domain),
-                axis=alt.Axis(format="%Y年%m月", labelAngle=-40),
+                axis=alt.Axis(format="%Y年%m月", labelAngle=-40)
             ),
             y=alt.Y(
                 "記録:Q",
+                title="記録",
+                scale=alt.Scale(zero=False, reverse=reverse_scale)
+            ),
+            tooltip=[
+                alt.Tooltip("yearmonthdate(日付):T", title="日付", format="%Y年%m月%d日"),
+                alt.Tooltip("記録:Q", title="記録")
+            ]
+        )
+        .properties(height=400, width=chart_width)
+    )
 
 
     # --- レイヤー作成 ---
