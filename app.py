@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import gspread
 from google.oauth2.service_account import Credentials
+import altair as alt
 
 # --- Google認証 ---
 SCOPE = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
@@ -220,7 +221,7 @@ if not chart_data.empty:
     colors = {10: "#66bb6a", 11: "#ffa726", 12: "#ef5350"}  # 緑, オレンジ, 赤
 
     # --- 折れ線（記録推移） ---
-import altair as alt
+
 
 if not chart_data.empty:
     chart_data["日付"] = pd.to_datetime(chart_data["日付"], errors="coerce")
