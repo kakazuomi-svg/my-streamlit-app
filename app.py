@@ -57,7 +57,7 @@ df_long["記録"] = pd.to_numeric(df_long["記録"], errors="coerce")
 df_long["記録"] = pd.to_numeric(df_long["記録"], errors="coerce")
 
 # --- タイム系（小さい方が良い） ---
-time_events = ["1.3km", "4mダッシュ", "50m走"]
+time_events = ["1.3km", "4mダッシュ", "50m走", "リフティング時間"]
 
 # --- 集計（最高記録） ---
 best_list = []
