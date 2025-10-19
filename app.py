@@ -242,7 +242,12 @@ if not chart_data.empty:
     reverse_scale = True if selected_event in time_events else False
 
     # --- 表示ライン選択 ---
-    line_type = st.selectbox("表示するラインを選んでください👇", ["なし", "基準値", "目標値"], index=2)
+    line_type = st.selectbox(
+    "表示するラインを選んでください👇",
+    ["なし", "基準値", "目標値"],
+    index=2,
+    key="line_type"
+)
 
     # --- 色設定 ---
     colors = {10: "#66bb6a", 11: "#ffa726", 12: "#ef5350"}
