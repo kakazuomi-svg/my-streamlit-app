@@ -14,6 +14,21 @@ ws = client.open("soccer_training").worksheet("シート1")
 data = ws.get_all_records()
 df = pd.DataFrame(data)
 
+# --- リフティングレベル自動設定 ---
+if "リフティングレベル" not in df.columns:
+    df["リフティングレベル"] = None
+
+# リフティングの最新レベルを取得（空欄は除外）
+latest_lifting_level = (
+    df["リフティングレベル"].dropna().iloc[-1]
+    if df["リフティングレベル"].notna().any()
+    else 1  # 何もなければレベル1
+)
+
+# 他の行の空欄を自動補完
+df["リフティングレベル"] = df["リフティングレベル"].fillna(latest_lifting_level)
+
+
 # --- 列順をスプレッドシートと合わせる ---
 headers = ws.row_values(1)
 df = df[headers]
