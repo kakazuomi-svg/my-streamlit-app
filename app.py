@@ -60,43 +60,54 @@ df_long["記録"] = pd.to_numeric(df_long["記録"], errors="coerce")
 # --- タイム系（小さい方が良い） ---
 time_events = ["1.3km", "4mダッシュ", "50m走", "リフティング時間"]
 
-# --- 集計（最新レベルでの最高記録） ---
+# --- 集計（最新レベル優先＋空欄も全期間で補完） ---
 best_list = []
 
-# 最新の「年齢」または「リフティングレベル」を取得
+# 空欄を前方埋め（最新レベルを正しく取るため）
 if "リフティングレベル" in df.columns:
-    latest_level = df["リフティングレベル"].dropna().astype(str).iloc[-1]
-else:
-    latest_level = df["年齢"].dropna().astype(str).iloc[-1] if "年齢" in df.columns else None
+    df["リフティングレベル"] = df["リフティングレベル"].ffill()
+if "年齢" in df.columns:
+    df["年齢"] = df["年齢"].ffill()
 
-for event, group in df_long.groupby("種目"):
-    # 最新レベルで絞り込み
-    if "リフティングレベル" in df.columns and latest_level is not None:
-        latest_data = df[df["リフティングレベル"].astype(str) == latest_level]
-    elif "年齢" in df.columns and latest_level is not None:
-        latest_data = df[df["年齢"].astype(str) == latest_level]
+# 最新レベルを取得
+if "リフティングレベル" in df.columns and df["リフティングレベル"].notna().any():
+    latest_level = str(df["リフティングレベル"].dropna().iloc[-1])
+elif "年齢" in df.columns and df["年齢"].notna().any():
+    latest_level = str(df["年齢"].dropna().iloc[-1])
+else:
+    latest_level = None
+
+# --- 全種目を確実に集計 ---
+for event in [c for c in df.columns if c not in exclude_cols + ["日付"]]:
+    # 最新レベル絞り込み
+    if latest_level is not None:
+        if "リフティングレベル" in df.columns:
+            latest_data = df[df["リフティングレベル"].astype(str) == latest_level]
+        elif "年齢" in df.columns:
+            latest_data = df[df["年齢"].astype(str) == latest_level]
+        else:
+            latest_data = df.copy()
     else:
         latest_data = df.copy()
 
-    # 最新レベルだけ melt
-    latest_long = latest_data.melt(
-        id_vars=["日付"],
-        value_vars=[event],
-        var_name="種目",
-        value_name="記録"
-    )
-    records = pd.to_numeric(latest_long["記録"], errors="coerce").dropna()
-
-    # タイム系なら最小値、その他は最大値
-    if event in ["4mダッシュ", "50m走", "1.3km", "リフティング時間"]:
-        best_value = records.min() if not records.empty else None
+    # 最新レベルにデータがあればそれを使う、なければ全期間から補完
+    latest_values = pd.to_numeric(latest_data.get(event, pd.Series([])), errors="coerce").dropna()
+    if latest_values.empty:
+        values = pd.to_numeric(df.get(event, pd.Series([])), errors="coerce").dropna()
     else:
-        best_value = records.max() if not records.empty else None
+        values = latest_values
+
+    # --- タイム系は最小値、その他は最大値 ---
+    if event in ["4mダッシュ", "50m走", "1.3km", "リフティング時間"]:
+        best_value = values.min() if not values.empty else None
+    else:
+        best_value = values.max() if not values.empty else None
 
     best_list.append({"種目": event, "最高記録": best_value})
 
 # --- DataFrame化 ---
 best_df = pd.DataFrame(best_list)
+
 
 
 # --- 最新の年齢を取得（空欄スキップして最後の数字を拾う） ---
