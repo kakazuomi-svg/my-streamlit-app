@@ -27,19 +27,21 @@ for c in valid_cols:
     df[c] = pd.to_numeric(df[c].astype(str).str.replace(",", "").str.strip(), errors="coerce")
     st.write(f"列 [{c}] 型:", df[c].map(type).unique())
 
-# --- 最高記録テスト ---
+# --- 最高記録（シンプル安定版：全データから算出） ---
 time_events = ["4mダッシュ", "50m走", "1.3km", "リフティング時間"]
+
 best_list = []
-for event in valid_cols:
-    series = pd.to_numeric(df[event], errors="coerce").dropna()
-    st.write(f"種目 {event} → 有効データ数: {len(series)} / 最小: {series.min() if not series.empty else None}, 最大: {series.max() if not series.empty else None}")
-    if series.empty:
+for event in [c for c in df.columns if c not in ["日付", "メモ", "疲労度", "年齢", "リフティングレベル"]]:
+    # 数値変換（空白・カンマ対応）
+    values = pd.to_numeric(df[event].astype(str).str.replace(",", "").str.strip(), errors="coerce").dropna()
+
+    if values.empty:
         best_value = None
     elif event in time_events:
-        best_value = series.min()
+        best_value = values.min()   # タイム系 → 最小値
     else:
-        best_value = series.max()
+        best_value = values.max()   # それ以外 → 最大値
+
     best_list.append({"種目": event, "最高記録": best_value})
 
 best_df = pd.DataFrame(best_list)
-st.dataframe(best_df)
