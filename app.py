@@ -110,6 +110,9 @@ try:
 except Exception:
     current_age = None
 
+# --- 集計結果をDataFrame化（このタイミングが正解！）---
+best_df = pd.DataFrame(best_list)
+
 # --- 基準値・目標値シートを読み込み ---
 base_dict, goal_dict = {}, {}
 
@@ -145,9 +148,6 @@ for col in ["最高記録", "基準値", "目標値"]:
         best_df[col] = pd.to_numeric(best_df[col], errors="coerce").round(2)
 
 # --- 種目の順番を再指定 ---
-# --- 集計結果をDataFrame化 ---
-best_df = pd.DataFrame(best_list)
-
 best_df["種目"] = pd.Categorical(best_df["種目"], categories=column_order, ordered=True)
 best_df = best_df.sort_values("種目", key=lambda x: x.map(order_map)).reset_index(drop=True)
 
