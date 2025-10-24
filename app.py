@@ -9,10 +9,21 @@ client = gspread.authorize(creds)
 
 ws = client.open("soccer_training").worksheet("シート1")
 data = ws.get_all_records()
-# ✅ 空白行を削除する（全列がNoneの行を除去）
-data = [row for row in data if any(v not in [None, "", " "] for v in row.values())]
-df = pd.DataFrame(data)
 
+df = pd.DataFrame(data)
+df = df.dropna(how="all")
+
+# ✅ 各列を一括変換（小数点・カンマ・空白対応）
+for c in df.columns:
+    if c not in ["日付", "メモ", "年齢", "リフティングレベル"]:
+        df[c] = (
+            df[c]
+            .astype(str)
+            .str.replace(",", "", regex=False)
+            .str.replace("　", "", regex=False)
+            .str.strip()
+        )
+        df[c] = pd.to_numeric(df[c], errors="coerce")
 st.write("📊 読み込みデータ（上位5件）")
 st.dataframe(df.head())
 
