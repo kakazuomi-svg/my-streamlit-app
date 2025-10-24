@@ -88,41 +88,34 @@ latest_level = (
 # --- タイム系定義 ---
 time_events = ["4mダッシュ", "50m走", "1.3km", "リフティング時間"]
 
-# --- 集計（最新レベルの最高記録） ---
+# --- 💪最高記録テーブル生成（安定版） ---
 best_list = []
-for event, group in df_long.groupby("種目"):
-    # 最新レベルだけ抽出
-    latest_data = group[group["リフティングレベル"].astype(str) == str(latest_level)]
-    records = pd.to_numeric(latest_data["記録"], errors="coerce").dropna()
 
-    # タイム系は最小値、それ以外は最大値
-    if event in time_events:
-        best_value = records.min() if not records.empty else None
+# --- タイム系は小さいほど良い ---
+time_events = ["4mダッシュ", "50m走", "1.3km", "リフティング時間"]
+
+# --- 対象種目を定義 ---
+targets = [c for c in df.columns if c not in exclude_cols + ["日付"]]
+
+for event in targets:
+    # 数値化（空は除外）
+    records = pd.to_numeric(df[event], errors="coerce").dropna()
+
+    if records.empty:
+        best_value = None
     else:
-        best_value = records.max() if not records.empty else None
+        # タイム系なら最小値、それ以外は最大値
+        if event in time_events:
+            best_value = records.min()
+        else:
+            best_value = records.max()
 
     best_list.append({"種目": event, "最高記録": best_value})
 
 # --- DataFrame化 ---
 best_df = pd.DataFrame(best_list)
 
-
-# --- 最新の年齢を取得（空欄スキップして最後の数字を拾う） ---
-try:
-    current_age = int(
-        df["年齢"]
-        .dropna()
-        .astype(str)
-        .str.extract(r"(\d+)")[0]
-        .dropna()
-        .iloc[-1]
-    )
-except Exception:
-    current_age = None
-
-# --- 基準値・目標値シートを読み込み ---
-base_dict, goal_dict = {}, {}
-
+# --- 基準値・目標値をマッピング ---
 if current_age:
     ws_base = client.open("soccer_training").worksheet("基準値")
     ws_goal = client.open("soccer_training").worksheet("目標値")
@@ -130,31 +123,20 @@ if current_age:
     df_base = pd.DataFrame(ws_base.get_all_records())
     df_goal = pd.DataFrame(ws_goal.get_all_records())
 
-    # 年齢に該当する行を取得
     base_row = df_base[df_base["年齢"] == current_age].iloc[0]
     goal_row = df_goal[df_goal["年齢"] == current_age].iloc[0]
 
-    # --- キー名の整形（空白除去） ---
     base_dict = {k.strip(): v for k, v in base_row.drop(labels=["年齢"]).to_dict().items()}
     goal_dict = {k.strip(): v for k, v in goal_row.drop(labels=["年齢"]).to_dict().items()}
 
-    # --- best_df に基準値・目標値を追加 ---
     best_df["種目"] = best_df["種目"].str.strip()
     best_df["基準値"] = best_df["種目"].map(base_dict)
     best_df["目標値"] = best_df["種目"].map(goal_dict)
 
-# --- タイトル書式統一（None回避） ---
-title_age = f"{current_age}歳 " if current_age else ""
-
-# --- 並び順マップを作る ---
-headers = ws.row_values(1)
-column_order = [c for c in headers if c in best_df["種目"].values and c not in exclude_cols]
-order_map = {v: i for i, v in enumerate(column_order)}
-
-# --- 書式を小数点2位に統一 ---
+# --- 数値を丸めて整形 ---
 for col in ["最高記録", "基準値", "目標値"]:
-    if col in best_df.columns:
-        best_df[col] = pd.to_numeric(best_df[col], errors="coerce").round(2)
+    best_df[col] = pd.to_numeric(best_df[col], errors="coerce").round(2)
+
 
 # --- 種目の順番を再指定 ---
 best_df["種目"] = pd.Categorical(best_df["種目"], categories=column_order, ordered=True)
