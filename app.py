@@ -71,9 +71,12 @@ elif "年齢" in df.columns:
 else:
     latest_level = None
 
-# --- 全種目を対象に ---
+# タイム系（小さいほど良い）
+time_events = ["1.3km", "4mダッシュ", "50m走", "リフティング時間"]
+
+# --- すべての種目をループ ---
 for event in [c for c in df.columns if c not in exclude_cols + ["日付"]]:
-    # 最新レベル絞り込み
+    # 最新レベル抽出（なければ全期間）
     if "リフティングレベル" in df.columns and latest_level is not None:
         latest_data = df[df["リフティングレベル"].astype(str) == latest_level]
     elif "年齢" in df.columns and latest_level is not None:
@@ -81,20 +84,17 @@ for event in [c for c in df.columns if c not in exclude_cols + ["日付"]]:
     else:
         latest_data = df.copy()
 
-    # 最新レベルにその種目が存在するかチェック
-    if event in latest_data.columns:
-        latest_values = pd.to_numeric(latest_data[event], errors="coerce").dropna()
-    else:
-        latest_values = pd.Series(dtype=float)
+    # 最新レベルで値を取得
+    latest_values = pd.to_numeric(latest_data[event], errors="coerce").dropna()
 
-    # --- データがなければ全期間で補完 ---
-    if latest_values.empty and event in df.columns:
+    # 空なら全期間データで補完
+    if latest_values.empty:
         values = pd.to_numeric(df[event], errors="coerce").dropna()
     else:
         values = latest_values
 
-    # --- タイム系なら最小値、それ以外は最大値 ---
-    if event in ["4mダッシュ", "50m走", "1.3km", "リフティング時間"]:
+    # --- 判定 ---
+    if event in time_events:
         best_value = values.min() if not values.empty else None
     else:
         best_value = values.max() if not values.empty else None
