@@ -161,13 +161,15 @@ def highlight_rows(row):
             return [""] * len(row)
 
         # タイム系（小さいほど良い）
-        if event in ["4mダッシュ", "50m走", "1.3km"]:
-            if best > base:  # 基準より遅い
-                color = "background-color: #ffd6d6;"  # パステルレッド
-            elif best > goal:  # 目標よりは遅いけど基準内
-                color = "background-color: #d8f5d8;"  # パステルグリーン
-            else:  # 目標より速い（良い）
-                color = "background-color: #d8e8ff;"  # パステルブルー
+        if event in ["4mダッシュ", "50m走", "1.3km", "リフティング時間"]:
+        # タイム系：小さいほど良い
+            if best < goal:
+                color = "background-color: #d8e8ff;"  # パステルブルー（目標達成）
+            elif best < base:
+                color = "background-color: #d8f5d8;"  # パステルグリーン（基準クリア）
+            else:
+                color = "background-color: #ffd6d6;"  # パステルレッド（基準未達）
+
         else:
             # 通常系（大きいほど良い）
             if best < base:
