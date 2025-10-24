@@ -23,6 +23,8 @@ st.write("🎯 対象列:", valid_cols)
 
 # 数値変換テスト
 for c in valid_cols:
+     # ここで文字列を安全に数値化（全角・空白・カンマ対応）
+    df[c] = pd.to_numeric(df[c].astype(str).str.replace(",", "").str.strip(), errors="coerce")
     st.write(f"列 [{c}] 型:", df[c].map(type).unique())
 
 # --- 最高記録テスト ---
