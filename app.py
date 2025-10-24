@@ -14,7 +14,7 @@ ws = client.open("soccer_training").worksheet("シート1")
 data = ws.get_all_records()
 df = pd.DataFrame(data)
 
-# --- 年齢（最新）を取得 ---
+# --- 最新の年齢を取得（空欄スキップして最後の数字を拾う） ---
 try:
     current_age = int(
         df["年齢"]
@@ -40,121 +40,26 @@ if "リフティングレベル" in df.columns:
     if len(tmp) > 0:
         latest_level = tmp.iloc[-1]
 
-# --- 列順をスプレッドシートと合わせる ---
-headers = ws.row_values(1)
-df = df[headers]
-
-# --- 並び順を定義 ---
-exclude_cols = ["メモ", "年齢", "リフティングレベル", "疲労度"]
-column_order = [c for c in headers if c not in exclude_cols]
-order_map = {v: i for i, v in enumerate(column_order)}
-
-
-# --- リフティングレベルを日付ベースで補完 ---
-if "リフティングレベル" not in df.columns:
-    df["リフティングレベル"] = None
-
-# 日付をdatetimeに変換
-df["日付"] = pd.to_datetime(df["日付"], errors="coerce")
-
-# リフティングレベルのある日付を取得し、日付順に並べる
-level_map = df.loc[df["リフティングレベル"].notna(), ["日付", "リフティングレベル"]].copy()
-level_map = level_map.sort_values("日付")
-
-# リフティングレベルを前方補完（最新レベルを全行に伝播）
-df = df.sort_values("日付")
-df["リフティングレベル"] = df["リフティングレベル"].ffill()
-
-# もし全行NaNならレベル1で埋める
-if df["リフティングレベル"].isna().all():
-    df["リフティングレベル"] = 1
-
-# --- 列順をスプレッドシートと合わせる ---
-headers = ws.row_values(1)
-df = df[headers]
-
-# --- 不要な列を除外 ---
-exclude_cols = ["メモ", "年齢", "リフティングレベル",  "疲労度"]
-cols_to_use = [c for c in df.columns if c not in exclude_cols]
-
-# --- 横型 → 縦型に変換（レベル情報付き） ---
-id_cols = ["日付"]
-if "リフティングレベル" in df.columns:
-    id_cols.append("リフティングレベル")
-
-df_long = df.melt(
-    id_vars=id_cols,
-    value_vars=[c for c in df.columns if c not in id_cols + ["メモ", "年齢", "疲労度"]],
-    var_name="種目",
-    value_name="記録"
-)
-
-# --- 数値変換（リフティング時間補正も含む） ---
-def convert_min_dot_sec(x):
-    try:
-        x = str(x).strip()
-        if "." in x:
-            mins, secs = x.split(".")
-            return int(mins) + int(secs) / 60
-        else:
-            return float(x)
-    except:
-        return None
-
-df_long.loc[df_long["種目"] == "リフティング時間", "記録"] = (
-    df_long.loc[df_long["種目"] == "リフティング時間", "記録"].apply(convert_min_dot_sec)
-)
-
-df_long["記録"] = pd.to_numeric(df_long["記録"], errors="coerce")
-
-# --- 最新レベルの取得 ---
-latest_level = (
-    df_long["リフティングレベル"].dropna().astype(str).iloc[-1]
-    if "リフティングレベル" in df_long.columns and df_long["リフティングレベル"].notna().any()
-    else None
-)
-
-# --- 最新レベルを特定 ---
-latest_level = (
-    df["リフティングレベル"].dropna().astype(str).iloc[-1]
-    if "リフティングレベル" in df.columns and df["リフティングレベル"].notna().any()
-    else "1"
-)
-
-# --- タイム系定義 ---
-time_events = ["4mダッシュ", "50m走", "1.3km", "リフティング時間"]
-
 # --- 💪最高記録テーブル生成（リフティングだけレベル対応） ---
 best_list = []
 time_events = ["4mダッシュ", "50m走", "1.3km", "リフティング時間"]
-
-# 最新年齢・レベルを取得
-latest_age = (
-    str(df["年齢"].dropna().iloc[-1])
-    if df["年齢"].notna().any() else None
-)
-latest_level = (
-    str(df["リフティングレベル"].dropna().iloc[-1])
-    if "リフティングレベル" in df.columns and df["リフティングレベル"].notna().any()
-    else None
-)
 
 # --- 対象列を抽出 ---
 valid_cols = [c for c in df.columns if c not in ["日付", "メモ", "疲労度", "年齢", "リフティングレベル"]]
 
 for event in valid_cols:
-    # リフティング時間のみレベルで抽出
+    # --- データ絞り込み ---
     if event == "リフティング時間" and latest_level is not None:
-        target = df[df["リフティングレベル"].astype(str) == latest_level]
+        target = df[df["リフティングレベル"].astype(str) == str(latest_level)]
     elif latest_age is not None:
-        target = df[df["年齢"].astype(str) == latest_age]
+        target = df[df["年齢"].astype(str).str.contains(str(latest_age), na=False)]
     else:
         target = df.copy()
 
-    # 数値変換
+    # --- 値を数値変換 ---
     values = pd.to_numeric(target[event], errors="coerce").dropna()
 
-    # タイム系なら最小値、その他は最大値
+    # --- 最大 or 最小を取得 ---
     if event in time_events:
         best_value = values.min() if not values.empty else None
     else:
