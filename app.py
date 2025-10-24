@@ -27,6 +27,19 @@ try:
 except Exception:
     current_age = None
 
+# --- 最新年齢とリフティングレベルを安全に取得 ---
+latest_age = None
+if "年齢" in df.columns:
+    tmp = df["年齢"].dropna().astype(str).str.extract(r"(\d+)")[0].dropna()
+    if len(tmp) > 0:
+        latest_age = tmp.iloc[-1]
+
+latest_level = None
+if "リフティングレベル" in df.columns:
+    tmp = df["リフティングレベル"].dropna().astype(str)
+    if len(tmp) > 0:
+        latest_level = tmp.iloc[-1]
+
 # --- 列順をスプレッドシートと合わせる ---
 headers = ws.row_values(1)
 df = df[headers]
