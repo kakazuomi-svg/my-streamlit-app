@@ -90,6 +90,8 @@ for event, group in df_long.groupby("種目"):
         best_value = records.max() if not records.empty else None
 
     best_list.append({"種目": event, "最高記録": best_value})
+    # 🩵 ここを追加
+best_df = pd.DataFrame(best_list)
 
 # --- 最新の年齢を取得（空欄スキップして最後の数字を拾う） ---
 try:
