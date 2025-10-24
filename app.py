@@ -60,26 +60,17 @@ df_long["記録"] = pd.to_numeric(df_long["記録"], errors="coerce")
 # --- タイム系（小さい方が良い） ---
 time_events = ["1.3km", "4mダッシュ", "50m走", "リフティング時間"]
 
-# --- 集計（最新レベル優先＋空欄は全期間で補完） ---
+# --- 集計（最新レベルでの最高記録） ---
 best_list = []
 
-# --- 空欄を前方埋め（同じ年齢・レベル扱い） ---
+# 最新の「年齢」または「リフティングレベル」を取得
 if "リフティングレベル" in df.columns:
-    df["リフティングレベル"] = df["リフティングレベル"].ffill()
-if "年齢" in df.columns:
-    df["年齢"] = df["年齢"].ffill()
-
-# --- 最新レベルを確認（リフティングレベル > 年齢 > なし） ---
-if "リフティングレベル" in df.columns and df["リフティングレベル"].notna().any():
-    latest_level = str(df["リフティングレベル"].dropna().iloc[-1])
-elif "年齢" in df.columns and df["年齢"].notna().any():
-    latest_level = str(df["年齢"].dropna().iloc[-1])
+    latest_level = df["リフティングレベル"].dropna().astype(str).iloc[-1]
 else:
-    latest_level = None
+    latest_level = df["年齢"].dropna().astype(str).iloc[-1] if "年齢" in df.columns else None
 
-# --- 全種目対象に集計 ---
-for event in [c for c in df.columns if c not in exclude_cols + ["日付"]]:
-    # 最新レベル絞り込み
+for event, group in df_long.groupby("種目"):
+    # 最新レベルで絞り込み
     if "リフティングレベル" in df.columns and latest_level is not None:
         latest_data = df[df["リフティングレベル"].astype(str) == latest_level]
     elif "年齢" in df.columns and latest_level is not None:
@@ -87,23 +78,20 @@ for event in [c for c in df.columns if c not in exclude_cols + ["日付"]]:
     else:
         latest_data = df.copy()
 
-    # 最新レベルにデータがあるか確認
-    if event in latest_data.columns:
-        latest_values = pd.to_numeric(latest_data[event], errors="coerce").dropna()
-    else:
-        latest_values = pd.Series(dtype=float)
+    # 最新レベルだけ melt
+    latest_long = latest_data.melt(
+        id_vars=["日付"],
+        value_vars=[event],
+        var_name="種目",
+        value_name="記録"
+    )
+    records = pd.to_numeric(latest_long["記録"], errors="coerce").dropna()
 
-    # --- データがなければ全期間で補完 ---
-    if latest_values.empty:
-        values = pd.to_numeric(df[event], errors="coerce").dropna()
-    else:
-        values = latest_values
-
-    # --- タイム系は最小値、他は最大値 ---
+    # タイム系なら最小値、その他は最大値
     if event in ["4mダッシュ", "50m走", "1.3km", "リフティング時間"]:
-        best_value = values.min() if not values.empty else None
+        best_value = records.min() if not records.empty else None
     else:
-        best_value = values.max() if not values.empty else None
+        best_value = records.max() if not records.empty else None
 
     best_list.append({"種目": event, "最高記録": best_value})
 
