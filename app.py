@@ -9,6 +9,8 @@ client = gspread.authorize(creds)
 
 ws = client.open("soccer_training").worksheet("シート1")
 data = ws.get_all_records()
+# ✅ 空白行を削除する（全列がNoneの行を除去）
+data = [row for row in data if any(v not in [None, "", " "] for v in row.values())]
 df = pd.DataFrame(data)
 
 st.write("📊 読み込みデータ（上位5件）")
