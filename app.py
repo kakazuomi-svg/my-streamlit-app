@@ -63,20 +63,23 @@ time_events = ["1.3km", "4mダッシュ", "50m走", "リフティング時間"]
 # --- 集計（最新レベル優先＋空欄は全期間で補完） ---
 best_list = []
 
-# 最新レベルを確認（リフティングレベル > 年齢 > なし）
+# --- 空欄を前方埋め（同じ年齢・レベル扱い） ---
 if "リフティングレベル" in df.columns:
+    df["リフティングレベル"] = df["リフティングレベル"].ffill()
+if "年齢" in df.columns:
+    df["年齢"] = df["年齢"].ffill()
+
+# --- 最新レベルを確認（リフティングレベル > 年齢 > なし） ---
+if "リフティングレベル" in df.columns and df["リフティングレベル"].notna().any():
     latest_level = str(df["リフティングレベル"].dropna().iloc[-1])
-elif "年齢" in df.columns:
+elif "年齢" in df.columns and df["年齢"].notna().any():
     latest_level = str(df["年齢"].dropna().iloc[-1])
 else:
     latest_level = None
 
-# タイム系（小さいほど良い）
-time_events = ["1.3km", "4mダッシュ", "50m走", "リフティング時間"]
-
-# --- すべての種目をループ ---
+# --- 全種目対象に集計 ---
 for event in [c for c in df.columns if c not in exclude_cols + ["日付"]]:
-    # 最新レベル抽出（なければ全期間）
+    # 最新レベル絞り込み
     if "リフティングレベル" in df.columns and latest_level is not None:
         latest_data = df[df["リフティングレベル"].astype(str) == latest_level]
     elif "年齢" in df.columns and latest_level is not None:
@@ -84,17 +87,20 @@ for event in [c for c in df.columns if c not in exclude_cols + ["日付"]]:
     else:
         latest_data = df.copy()
 
-    # 最新レベルで値を取得
-    latest_values = pd.to_numeric(latest_data[event], errors="coerce").dropna()
+    # 最新レベルにデータがあるか確認
+    if event in latest_data.columns:
+        latest_values = pd.to_numeric(latest_data[event], errors="coerce").dropna()
+    else:
+        latest_values = pd.Series(dtype=float)
 
-    # 空なら全期間データで補完
+    # --- データがなければ全期間で補完 ---
     if latest_values.empty:
         values = pd.to_numeric(df[event], errors="coerce").dropna()
     else:
         values = latest_values
 
-    # --- 判定 ---
-    if event in time_events:
+    # --- タイム系は最小値、他は最大値 ---
+    if event in ["4mダッシュ", "50m走", "1.3km", "リフティング時間"]:
         best_value = values.min() if not values.empty else None
     else:
         best_value = values.max() if not values.empty else None
@@ -103,6 +109,7 @@ for event in [c for c in df.columns if c not in exclude_cols + ["日付"]]:
 
 # --- DataFrame化 ---
 best_df = pd.DataFrame(best_list)
+
 
 # --- 最新の年齢を取得（空欄スキップして最後の数字を拾う） ---
 try:
