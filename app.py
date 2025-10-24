@@ -14,6 +14,29 @@ ws = client.open("soccer_training").worksheet("シート1")
 data = ws.get_all_records()
 df = pd.DataFrame(data)
 
+# --- 年齢（最新）を取得 ---
+try:
+    current_age = int(
+        df["年齢"]
+        .dropna()
+        .astype(str)
+        .str.extract(r"(\d+)")[0]
+        .dropna()
+        .iloc[-1]
+    )
+except Exception:
+    current_age = None
+
+# --- 列順をスプレッドシートと合わせる ---
+headers = ws.row_values(1)
+df = df[headers]
+
+# --- 並び順を定義 ---
+exclude_cols = ["メモ", "年齢", "リフティングレベル", "疲労度"]
+column_order = [c for c in headers if c not in exclude_cols]
+order_map = {v: i for i, v in enumerate(column_order)}
+
+
 # --- リフティングレベルを日付ベースで補完 ---
 if "リフティングレベル" not in df.columns:
     df["リフティングレベル"] = None
@@ -90,18 +113,15 @@ time_events = ["4mダッシュ", "50m走", "1.3km", "リフティング時間"]
 
 # --- 💪最高記録テーブル生成（リフティングだけレベル対応） ---
 best_list = []
-
-# --- タイム系（小さいほど良い） ---
 time_events = ["4mダッシュ", "50m走", "1.3km", "リフティング時間"]
 
-# --- 最新情報の取得 ---
+# 最新年齢・レベルを取得
 latest_age = (
-    int(df["年齢"].dropna().astype(str).str.extract(r"(\d+)")[0].iloc[-1])
+    str(df["年齢"].dropna().iloc[-1])
     if df["年齢"].notna().any() else None
 )
-
 latest_level = (
-    df["リフティングレベル"].dropna().iloc[-1]
+    str(df["リフティングレベル"].dropna().iloc[-1])
     if "リフティングレベル" in df.columns and df["リフティングレベル"].notna().any()
     else None
 )
@@ -110,18 +130,18 @@ latest_level = (
 valid_cols = [c for c in df.columns if c not in ["日付", "メモ", "疲労度", "年齢", "リフティングレベル"]]
 
 for event in valid_cols:
-    # --- データ絞り込み ---
+    # リフティング時間のみレベルで抽出
     if event == "リフティング時間" and latest_level is not None:
-        target = df[df["リフティングレベル"] == latest_level]
+        target = df[df["リフティングレベル"].astype(str) == latest_level]
     elif latest_age is not None:
-        target = df[df["年齢"] == latest_age]
+        target = df[df["年齢"].astype(str) == latest_age]
     else:
         target = df.copy()
 
-    # --- 値を数値変換 ---
+    # 数値変換
     values = pd.to_numeric(target[event], errors="coerce").dropna()
 
-    # --- 最大 or 最小を取得 ---
+    # タイム系なら最小値、その他は最大値
     if event in time_events:
         best_value = values.min() if not values.empty else None
     else:
