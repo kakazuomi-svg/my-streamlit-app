@@ -14,30 +14,24 @@ ws = client.open("soccer_training").worksheet("シート1")
 data = ws.get_all_records()
 df = pd.DataFrame(data)
 
-# --- リフティングレベル自動設定（リフティング以外は1） ---
+# --- リフティングレベルを日付ベースで補完 ---
 if "リフティングレベル" not in df.columns:
     df["リフティングレベル"] = None
 
-# リフティングの最新レベルを取得（なければ1）
-latest_lifting_level = (
-    df.loc[df["リフティングレベル"].notna(), "リフティングレベル"].iloc[-1]
-    if df["リフティングレベル"].notna().any()
-    else 1
-)
+# 日付をdatetimeに変換
+df["日付"] = pd.to_datetime(df["日付"], errors="coerce")
 
-# --- リフティング時間のある行には既存レベルを維持、それ以外は1 ---
-df["リフティングレベル"] = df.apply(
-    lambda row: row["リフティングレベル"]
-    if pd.notna(row["リフティングレベル"])
-    else 1,
-    axis=1
-)
+# リフティングレベルのある日付を取得し、日付順に並べる
+level_map = df.loc[df["リフティングレベル"].notna(), ["日付", "リフティングレベル"]].copy()
+level_map = level_map.sort_values("日付")
 
-# ただし「リフティング時間のある最新レベル」があれば、それを全体に適用
-if latest_lifting_level != 1:
-    df["リフティングレベル"] = df["リフティングレベル"].fillna(latest_lifting_level)
+# リフティングレベルを前方補完（最新レベルを全行に伝播）
+df = df.sort_values("日付")
+df["リフティングレベル"] = df["リフティングレベル"].ffill()
 
-
+# もし全行NaNならレベル1で埋める
+if df["リフティングレベル"].isna().all():
+    df["リフティングレベル"] = 1
 
 # --- 列順をスプレッドシートと合わせる ---
 headers = ws.row_values(1)
