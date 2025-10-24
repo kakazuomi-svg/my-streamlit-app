@@ -40,39 +40,30 @@ if "リフティングレベル" in df.columns:
     if len(tmp) > 0:
         latest_level = tmp.iloc[-1]
 
-# --- 💪最高記録テーブル生成（リフティングのみレベル考慮） ---
+# --- 💪 各項目の最高記録を算出（以前の安定動作に戻す） ---
 best_list = []
+
+# タイム系（小さい方が良い）
 time_events = ["4mダッシュ", "50m走", "1.3km", "リフティング時間"]
 
-# 最新レベルを取得（なければNone）
-latest_level = (
-    df["リフティングレベル"].dropna().iloc[-1]
-    if "リフティングレベル" in df.columns and df["リフティングレベル"].notna().any()
-    else None
-)
-
 for event in [c for c in df.columns if c not in ["日付", "年齢", "疲労度", "メモ", "リフティングレベル"]]:
-    # --- データ抽出 ---
-    if event == "リフティング時間" and latest_level is not None:
-        # リフティングのみ最新レベルに絞る
-        subset = df[df["リフティングレベル"] == latest_level]
-    else:
-        # 他の種目は全期間から
-        subset = df.copy()
+    # 全期間から有効値を抽出
+    values = pd.to_numeric(df[event], errors="coerce").dropna()
 
-    # 数値変換して有効値を取り出す
-    records = pd.to_numeric(subset[event], errors="coerce").dropna()
-
-    # --- 最大 or 最小を取得 ---
-    if records.empty:
+    # データが存在しない場合
+    if values.empty:
         best_value = None
+    # タイム系：小さいほど良い
     elif event in time_events:
-        best_value = records.min()  # タイム系：小さいほど良い
+        best_value = values.min()
+    # 通常系：大きいほど良い
     else:
-        best_value = records.max()  # 通常系：大きいほど良い
+        best_value = values.max()
 
+    # 結果を追加
     best_list.append({"種目": event, "最高記録": best_value})
 
+# DataFrame化
 best_df = pd.DataFrame(best_list)
 
 
