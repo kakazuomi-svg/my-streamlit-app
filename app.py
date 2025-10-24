@@ -134,24 +134,12 @@ if current_age:
     base_row = df_base[df_base["年齢"] == current_age].iloc[0]
     goal_row = df_goal[df_goal["年齢"] == current_age].iloc[0]
 
-    base_dict = base_row.drop(labels=["年齢"]).to_dict()
-    goal_dict = goal_row.drop(labels=["年齢"]).to_dict()
+    # --- キー名の整形（空白除去） ---
+    base_dict = {k.strip(): v for k, v in base_row.drop(labels=["年齢"]).to_dict().items()}
+    goal_dict = {k.strip(): v for k, v in goal_row.drop(labels=["年齢"]).to_dict().items()}
 
-    # --- 列名・種目名を正規化（空白・全角スペース除去） ---
-    def normalize_key(s):
-        if pd.isna(s):
-            return ""
-        return str(s).replace("　", "").replace(" ", "").strip()
-
-    # 種目列の整形
-    best_df["種目"] = best_df["種目"].apply(normalize_key)
-
-    # 辞書のキーも整形
-    base_dict = {normalize_key(k): v for k, v in base_dict.items()}
-    goal_dict = {normalize_key(k): v for k, v in goal_dict.items()}
-
-    
     # --- best_df に基準値・目標値を追加 ---
+    best_df["種目"] = best_df["種目"].str.strip()
     best_df["基準値"] = best_df["種目"].map(base_dict)
     best_df["目標値"] = best_df["種目"].map(goal_dict)
 
