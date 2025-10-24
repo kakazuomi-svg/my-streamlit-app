@@ -65,14 +65,15 @@ best_list = []
 
 # 最新レベルを確認（リフティングレベル > 年齢 > なし）
 if "リフティングレベル" in df.columns:
-    latest_level = df["リフティングレベル"].dropna().astype(str).iloc[-1]
+    latest_level = str(df["リフティングレベル"].dropna().iloc[-1])
 elif "年齢" in df.columns:
-    latest_level = df["年齢"].dropna().astype(str).iloc[-1]
+    latest_level = str(df["年齢"].dropna().iloc[-1])
 else:
     latest_level = None
 
-for event, group in df_long.groupby("種目"):
-    # --- 最新レベルのデータを抽出 ---
+# --- 全種目を対象に ---
+for event in [c for c in df.columns if c not in exclude_cols + ["日付"]]:
+    # 最新レベル絞り込み
     if "リフティングレベル" in df.columns and latest_level is not None:
         latest_data = df[df["リフティングレベル"].astype(str) == latest_level]
     elif "年齢" in df.columns and latest_level is not None:
@@ -80,30 +81,27 @@ for event, group in df_long.groupby("種目"):
     else:
         latest_data = df.copy()
 
-    # 最新レベルだけ melt
-    latest_long = latest_data.melt(
-        id_vars=["日付"],
-        value_vars=[event],
-        var_name="種目",
-        value_name="記録"
-    )
-    latest_records = pd.to_numeric(latest_long["記録"], errors="coerce").dropna()
+    # 最新レベルにその種目が存在するかチェック
+    if event in latest_data.columns:
+        latest_values = pd.to_numeric(latest_data[event], errors="coerce").dropna()
+    else:
+        latest_values = pd.Series(dtype=float)
 
     # --- データがなければ全期間で補完 ---
-    if latest_records.empty:
-        records = pd.to_numeric(group["記録"], errors="coerce").dropna()
+    if latest_values.empty and event in df.columns:
+        values = pd.to_numeric(df[event], errors="coerce").dropna()
     else:
-        records = latest_records
+        values = latest_values
 
     # --- タイム系なら最小値、それ以外は最大値 ---
     if event in ["4mダッシュ", "50m走", "1.3km", "リフティング時間"]:
-        best_value = records.min() if not records.empty else None
+        best_value = values.min() if not values.empty else None
     else:
-        best_value = records.max() if not records.empty else None
+        best_value = values.max() if not values.empty else None
 
     best_list.append({"種目": event, "最高記録": best_value})
 
-# --- 集計結果をDataFrame化（このタイミングが正解！）---
+# --- DataFrame化 ---
 best_df = pd.DataFrame(best_list)
 
 # --- 最新の年齢を取得（空欄スキップして最後の数字を拾う） ---
