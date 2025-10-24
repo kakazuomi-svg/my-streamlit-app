@@ -111,6 +111,8 @@ except Exception:
     current_age = None
 
 # --- 基準値・目標値シートを読み込み ---
+base_dict, goal_dict = {}, {}
+
 if current_age:
     ws_base = client.open("soccer_training").worksheet("基準値")
     ws_goal = client.open("soccer_training").worksheet("目標値")
