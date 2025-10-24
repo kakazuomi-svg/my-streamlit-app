@@ -88,32 +88,31 @@ latest_level = (
 # --- タイム系定義 ---
 time_events = ["4mダッシュ", "50m走", "1.3km", "リフティング時間"]
 
-# --- 💪最高記録テーブル生成（安定版） ---
+# --- 💪最高記録テーブル生成（完全安定版） ---
 best_list = []
+
+# --- 対象列を正確に取得 ---
+valid_cols = [c for c in df.columns if c not in ["日付", "年齢", "メモ", "疲労度", "リフティングレベル"]]
 
 # --- タイム系は小さいほど良い ---
 time_events = ["4mダッシュ", "50m走", "1.3km", "リフティング時間"]
 
-# --- 対象種目を定義 ---
-targets = [c for c in df.columns if c not in exclude_cols + ["日付"]]
+for event in valid_cols:
+    # 文字列から数値へ変換
+    series = pd.to_numeric(df[event], errors="coerce").dropna()
 
-for event in targets:
-    # 数値化（空は除外）
-    records = pd.to_numeric(df[event], errors="coerce").dropna()
-
-    if records.empty:
+    if len(series) == 0:
         best_value = None
+    elif event in time_events:
+        best_value = series.min()  # タイム系
     else:
-        # タイム系なら最小値、それ以外は最大値
-        if event in time_events:
-            best_value = records.min()
-        else:
-            best_value = records.max()
+        best_value = series.max()  # 通常系
 
     best_list.append({"種目": event, "最高記録": best_value})
 
 # --- DataFrame化 ---
 best_df = pd.DataFrame(best_list)
+
 
 # --- 基準値・目標値をマッピング ---
 if current_age:
