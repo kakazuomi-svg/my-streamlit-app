@@ -44,26 +44,15 @@ if "リフティングレベル" in df.columns:
 best_list = []
 time_events = ["4mダッシュ", "50m走", "1.3km", "リフティング時間"]
 
-# --- 対象列を抽出 ---
-valid_cols = [c for c in df.columns if c not in ["日付", "メモ", "疲労度", "年齢", "リフティングレベル"]]
-
 for event in valid_cols:
-    # --- データ絞り込み ---
-    if event == "リフティング時間" and latest_level is not None:
-        target = df[df["リフティングレベル"].astype(str) == str(latest_level)]
-    elif latest_age is not None:
-        target = df[df["年齢"].astype(str).str.contains(str(latest_age), na=False)]
+    # 全データ対象（空欄は除外）
+    values = pd.to_numeric(df[event], errors="coerce").dropna()
+    if values.empty:
+        best_value = None
+    elif event in time_events:
+        best_value = values.min()  # タイム系：小さい方が良い
     else:
-        target = df.copy()
-
-    # --- 値を数値変換 ---
-    values = pd.to_numeric(target[event], errors="coerce").dropna()
-
-    # --- 最大 or 最小を取得 ---
-    if event in time_events:
-        best_value = values.min() if not values.empty else None
-    else:
-        best_value = values.max() if not values.empty else None
+        best_value = values.max()  # 通常：大きい方が良い
 
     best_list.append({"種目": event, "最高記録": best_value})
 
