@@ -55,42 +55,33 @@ df_long["記録"] = pd.to_numeric(df_long["記録"], errors="coerce")
 # --- タイム系（小さい方が良い） ---
 time_events = ["1.3km", "4mダッシュ", "50m走", "リフティング時間"]
 
-# --- 集計（最新レベルでの最高記録） ---
+# --- 💪最高記録算出 ---
 best_list = []
 
-# 最新の「年齢」または「リフティングレベル」を取得
-if "リフティングレベル" in df.columns:
-    latest_level = df["リフティングレベル"].dropna().astype(str).iloc[-1]
-else:
-    latest_level = df["年齢"].dropna().astype(str).iloc[-1] if "年齢" in df.columns else None
+# 最新レベルの取得（リフティング用）
+latest_level = (
+    df["リフティングレベル"].dropna().iloc[-1]
+    if "リフティングレベル" in df.columns and df["リフティングレベル"].notna().any()
+    else 1
+)
 
-for event, group in df_long.groupby("種目"):
-    # 最新レベルで絞り込み
-    if "リフティングレベル" in df.columns and latest_level is not None:
-        latest_data = df[df["リフティングレベル"].astype(str) == latest_level]
-    elif "年齢" in df.columns and latest_level is not None:
-        latest_data = df[df["年齢"].astype(str) == latest_level]
+# 各種目をループ
+for event in valid_cols:
+
+    # 🟡 リフティング時間 → 最新レベル内の最小値
+    if event == "リフティング時間":
+        target = df[df["リフティングレベル"] == latest_level]
+        values = pd.to_numeric(target[event], errors="coerce").dropna()
+        best_value = values.min() if not values.empty else None
+
+    # 🟢 それ以外 → 全期間の最高値
     else:
-        latest_data = df.copy()
-
-    # 最新レベルだけ melt
-    latest_long = latest_data.melt(
-        id_vars=["日付"],
-        value_vars=[event],
-        var_name="種目",
-        value_name="記録"
-    )
-
-    records = pd.to_numeric(latest_long["記録"], errors="coerce").dropna()
-
-    # タイム系なら最小値、その他は最大値
-    if event in time_events:
-        best_value = records.min() if not records.empty else None
-    else:
-        best_value = records.max() if not records.empty else None
+        values = pd.to_numeric(df[event], errors="coerce").dropna()
+        best_value = values.max() if not values.empty else None
 
     best_list.append({"種目": event, "最高記録": best_value})
-    # 🩵 ここを追加
+
+# --- best_df 作成 ---
 best_df = pd.DataFrame(best_list)
 
 # --- 最新の年齢を取得（空欄スキップして最後の数字を拾う） ---
