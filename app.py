@@ -157,12 +157,11 @@ def highlight_rows(row):
         goal = row["目標値"]
         event = row["種目"]
 
-        if np.isnan(best) or np.isnan(base) or np.isnan(goal):
+        if pd.isna(best) or pd.isna(base) or pd.isna(goal):
             return [""] * len(row)
 
         # タイム系（小さいほど良い）
         if event in ["4mダッシュ", "50m走", "1.3km", "リフティング時間"]:
-        # タイム系：小さいほど良い
             if best < goal:
                 color = "background-color: #d8e8ff;"  # パステルブルー（目標達成）
             elif best < base:
@@ -173,17 +172,18 @@ def highlight_rows(row):
         else:
             # 通常系（大きいほど良い）
             if best < base:
-                color = "background-color: #ffd6d6;"  # パステルレッド
+                color = "background-color: #ffd6d6;"  # パステルレッド（基準未達）
             elif best < goal:
-                color = "background-color: #d8f5d8;"  # パステルグリーン
+                color = "background-color: #d8f5d8;"  # パステルグリーン（基準クリア）
             else:
-                color = "background-color: #d8e8ff;"  # パステルブルー
+                color = "background-color: #d8e8ff;"  # パステルブルー（目標達成）
 
         # 行全体に適用
         return [color] * len(row)
 
     except Exception:
         return [""] * len(row)
+
         
 # --- スタイル適用 ---
 styled = (
