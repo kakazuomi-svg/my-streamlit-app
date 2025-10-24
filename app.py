@@ -88,31 +88,48 @@ latest_level = (
 # --- タイム系定義 ---
 time_events = ["4mダッシュ", "50m走", "1.3km", "リフティング時間"]
 
-# --- 💪最高記録テーブル生成（完全安定版） ---
+# --- 💪最高記録テーブル生成（リフティングだけレベル対応） ---
 best_list = []
 
-# --- 対象列を正確に取得 ---
-valid_cols = [c for c in df.columns if c not in ["日付", "年齢", "メモ", "疲労度", "リフティングレベル"]]
-
-# --- タイム系は小さいほど良い ---
+# --- タイム系（小さいほど良い） ---
 time_events = ["4mダッシュ", "50m走", "1.3km", "リフティング時間"]
 
-for event in valid_cols:
-    # 文字列から数値へ変換
-    series = pd.to_numeric(df[event], errors="coerce").dropna()
+# --- 最新情報の取得 ---
+latest_age = (
+    int(df["年齢"].dropna().astype(str).str.extract(r"(\d+)")[0].iloc[-1])
+    if df["年齢"].notna().any() else None
+)
 
-    if len(series) == 0:
-        best_value = None
-    elif event in time_events:
-        best_value = series.min()  # タイム系
+latest_level = (
+    df["リフティングレベル"].dropna().iloc[-1]
+    if "リフティングレベル" in df.columns and df["リフティングレベル"].notna().any()
+    else None
+)
+
+# --- 対象列を抽出 ---
+valid_cols = [c for c in df.columns if c not in ["日付", "メモ", "疲労度", "年齢", "リフティングレベル"]]
+
+for event in valid_cols:
+    # --- データ絞り込み ---
+    if event == "リフティング時間" and latest_level is not None:
+        target = df[df["リフティングレベル"] == latest_level]
+    elif latest_age is not None:
+        target = df[df["年齢"] == latest_age]
     else:
-        best_value = series.max()  # 通常系
+        target = df.copy()
+
+    # --- 値を数値変換 ---
+    values = pd.to_numeric(target[event], errors="coerce").dropna()
+
+    # --- 最大 or 最小を取得 ---
+    if event in time_events:
+        best_value = values.min() if not values.empty else None
+    else:
+        best_value = values.max() if not values.empty else None
 
     best_list.append({"種目": event, "最高記録": best_value})
 
-# --- DataFrame化 ---
 best_df = pd.DataFrame(best_list)
-
 
 # --- 基準値・目標値をマッピング ---
 if current_age:
