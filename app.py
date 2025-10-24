@@ -103,6 +103,9 @@ for event, group in df_long.groupby("種目"):
 
     best_list.append({"種目": event, "最高記録": best_value})
 
+# --- 集計結果をDataFrame化（このタイミングが正解！）---
+best_df = pd.DataFrame(best_list)
+
 # --- 最新の年齢を取得（空欄スキップして最後の数字を拾う） ---
 try:
     current_age = int(
@@ -115,9 +118,6 @@ try:
     )
 except Exception:
     current_age = None
-
-# --- 集計結果をDataFrame化（このタイミングが正解！）---
-best_df = pd.DataFrame(best_list)
 
 # --- 基準値・目標値シートを読み込み ---
 base_dict, goal_dict = {}, {}
