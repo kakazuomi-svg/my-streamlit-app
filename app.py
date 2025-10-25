@@ -59,12 +59,16 @@ time_events = ["1.3km", "4mダッシュ", "50m走", "リフティング時間"]
 # 対象列を定義
 valid_cols = [c for c in df.columns if c not in ["日付", "メモ", "年齢", "疲労度", "リフティングレベル"]]
 best_list = []
+
 # 最新レベルの取得（リフティング用）
 latest_level = (
     df["リフティングレベル"].dropna().iloc[-1]
     if "リフティングレベル" in df.columns and df["リフティングレベル"].notna().any()
     else 1
 )
+
+# タイム系（小さいほど良い）
+time_events = ["4mダッシュ", "50m走", "1.3km", "リフティング時間"]
 
 # 各種目をループ
 for event in valid_cols:
@@ -75,7 +79,12 @@ for event in valid_cols:
         values = pd.to_numeric(target[event], errors="coerce").dropna()
         best_value = values.min() if not values.empty else None
 
-    # 🟢 それ以外 → 全期間の最高値
+    # 🟢 タイム系（全期間から最小値）
+    elif event in time_events:
+        values = pd.to_numeric(df[event], errors="coerce").dropna()
+        best_value = values.min() if not values.empty else None
+
+    # 🟢 通常系（全期間から最大値）
     else:
         values = pd.to_numeric(df[event], errors="coerce").dropna()
         best_value = values.max() if not values.empty else None
