@@ -94,6 +94,23 @@ for event in valid_cols:
 # --- best_df 作成 ---
 best_df = pd.DataFrame(best_list)
 
+time_events = ["4mダッシュ", "50m走", "1.3km走"]  # 短いほど良い
+
+for event in df["種目"].unique():
+    sub = df[df["種目"] == event]
+
+    if event in time_events:
+        best_val = sub["記録"].min()  # 速さ系（小さいほど良い）
+    elif event == "リフティング時間":
+        best_val = sub.iloc[-1]["記録"]  # 現仕様のまま（最新レベル）
+    else:
+        best_val = sub["記録"].max()
+
+    best_df = pd.concat([
+        best_df,
+        pd.DataFrame({"種目": [event], "最高記録": [best_val]})
+    ], ignore_index=True)
+
 # --- 最新の年齢を取得（空欄スキップして最後の数字を拾う） ---
 try:
     current_age = int(
