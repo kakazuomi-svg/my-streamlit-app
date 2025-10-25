@@ -97,22 +97,25 @@ for event in valid_cols:
 best_df = pd.DataFrame(best_list)
 best_df = pd.DataFrame()
 
-best_df = pd.DataFrame()
+# 記録種目（＝日付やメモなどを除外）
+exclude_cols = ["日付", "年齢", "身長", "体重", "疲労度", "メモ"]
+event_cols = [c for c in df.columns if c not in exclude_cols]
 
 time_events = ["4mダッシュ", "50m走", "1.3km"]
 lifting_event = "リフティング時間"
 
-for event in time_events + [lifting_event]:
-    # 数値変換（エラーはNaNにする）
+for event in event_cols:
     sub = pd.to_numeric(df[event], errors="coerce").dropna()
-
     if len(sub) == 0:
-        continue  # データがない場合スキップ
+        continue
 
+    # 判定ルール
     if event in time_events:
-        best_val = sub.min()  # 小さいほど良い（速さ系）
+        best_val = sub.min()  # 小さいほど良い
     elif event == lifting_event:
-        best_val = df[event].dropna().iloc[-1]  # リフティングは最新値そのまま
+        best_val = sub.iloc[-1]  # リフティングは最新レベル記録
+    else:
+        best_val = sub.max()  # それ以外は大きいほど良い（距離・力など）
 
     best_df = pd.concat([
         best_df,
