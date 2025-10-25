@@ -95,23 +95,28 @@ for event in valid_cols:
 best_df = pd.DataFrame(best_list)
 best_df = pd.DataFrame()
 
-# 最高記録を取りたい種目のリスト
+best_df = pd.DataFrame()
+
 time_events = ["4mダッシュ", "50m走", "1.3km"]
 lifting_event = "リフティング時間"
 
-# 種目ごとに最高記録を算出
 for event in time_events + [lifting_event]:
-    sub = df[event].dropna()  # 空白を除外
+    # 数値変換（エラーはNaNにする）
+    sub = pd.to_numeric(df[event], errors="coerce").dropna()
+
+    if len(sub) == 0:
+        continue  # データがない場合スキップ
 
     if event in time_events:
         best_val = sub.min()  # 小さいほど良い（速さ系）
     elif event == lifting_event:
-        best_val = sub.iloc[-1]  # リフティングは最新値（いじらない）
+        best_val = df[event].dropna().iloc[-1]  # リフティングは最新値そのまま
 
     best_df = pd.concat([
         best_df,
         pd.DataFrame({"種目": [event], "最高記録": [best_val]})
     ], ignore_index=True)
+
 
 
 # --- 最新の年齢を取得（空欄スキップして最後の数字を拾う） ---
