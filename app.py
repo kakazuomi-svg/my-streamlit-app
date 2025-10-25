@@ -93,6 +93,7 @@ for event in valid_cols:
 
 # --- best_df 作成 ---
 best_df = pd.DataFrame(best_list)
+df.columns = df.columns.str.strip()  # 列名の前後スペースを削除
 
 time_events = ["4mダッシュ", "50m走", "1.3km走"]  # 短いほど良い
 
