@@ -10,8 +10,7 @@ creds = Credentials.from_service_account_info(st.secrets["google_service_account
 client = gspread.authorize(creds)
 ws = client.open("soccer_training").worksheet("シート1")
 
-# ✅ この位置で確認
-st.write("✅ シート一覧:", [s.title for s in client.open("soccer_training").worksheets()])
+
 
 # --- データ読み込み ---
 data = ws.get_all_records()
