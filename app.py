@@ -368,7 +368,7 @@ red_points = (
     )
 )
 
-layers.append(red_points)
+
 
 if selected_event == "リフティング時間":
     red_points = (
