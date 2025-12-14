@@ -370,33 +370,33 @@ red_points = (
 
 layers.append(red_points)
 
-        # --- ライン（基準値 or 目標値） ---
-        if line_type == "基準値":
-            for age in [10, 11, 12]:
-                base_row = df_base[df_base["年齢"] == age]
-                if not base_row.empty and selected_event in base_row.columns:
-                    val = pd.to_numeric(base_row[selected_event], errors="coerce").values[0]
-                    df_tmp = pd.DataFrame({"基準値": [val]})
-                    base_line = (
-                        alt.Chart(df_tmp)
-                        .mark_rule(color=colors[age], strokeDash=[6, 4], size=2)
-                        .encode(y=alt.Y("基準値:Q"))
-                    )
-                    layers.append(base_line)
+# --- ライン（基準値 or 目標値） ---
+if line_type == "基準値":
+    for age in [10, 11, 12]:
+        base_row = df_base[df_base["年齢"] == age]
+        if not base_row.empty and selected_event in base_row.columns:
+            val = pd.to_numeric(base_row[selected_event], errors="coerce").values[0]
+            df_tmp = pd.DataFrame({"基準値": [val]})
+            base_line = (
+                alt.Chart(df_tmp)
+                .mark_rule(color=colors[age], strokeDash=[6, 4], size=2)
+                .encode(y=alt.Y("基準値:Q"))
+            )
+            layers.append(base_line)
 
-        elif line_type == "目標値":
-            for age in [10, 11, 12]:
-                goal_row = df_goal[df_goal["年齢"] == age]
-                if not goal_row.empty and selected_event in goal_row.columns:
-                    val = pd.to_numeric(goal_row[selected_event], errors="coerce").values[0]
-                    df_tmp = pd.DataFrame({"目標値": [val]})
-                    goal_line = (
-                        alt.Chart(df_tmp)
-                        .mark_rule(color=colors[age], strokeDash=[6, 4], size=2)
-                        .encode(y=alt.Y("目標値:Q"))
-                    )
-                    layers.append(goal_line)
+elif line_type == "目標値":
+    for age in [10, 11, 12]:
+        goal_row = df_goal[df_goal["年齢"] == age]
+        if not goal_row.empty and selected_event in goal_row.columns:
+            val = pd.to_numeric(goal_row[selected_event], errors="coerce").values[0]
+            df_tmp = pd.DataFrame({"目標値": [val]})
+            goal_line = (
+                alt.Chart(df_tmp)
+                .mark_rule(color=colors[age], strokeDash=[6, 4], size=2)
+                .encode(y=alt.Y("目標値:Q"))
+             )
+            layers.append(goal_line)
 
-        # --- 結合＆表示 ---
-        chart = alt.layer(*layers)
-        st.altair_chart(chart, use_container_width=True)
+# --- 結合＆表示 ---
+chart = alt.layer(*layers)
+st.altair_chart(chart, use_container_width=True)
