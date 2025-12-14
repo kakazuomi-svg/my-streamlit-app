@@ -370,6 +370,17 @@ red_points = (
 
 layers.append(red_points)
 
+if selected_event == "リフティング時間":
+    red_points = (
+        alt.Chart(chart_data[chart_data["レベル変化"]])
+        .mark_point(size=160, filled=False, stroke="red", strokeWidth=3)
+        .encode(
+            x=alt.X("日付:T"),
+            y=alt.Y("記録:Q")
+        )
+    )
+    layers.append(red_points)
+
 # --- ライン（基準値 or 目標値） ---
 if line_type == "基準値":
     for age in [10, 11, 12]:
