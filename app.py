@@ -235,12 +235,36 @@ selected_event = st.selectbox(
     index=0
 )
 
+# --- 🔴 リフティングレベルが変わった日（イベント日）を作る ---
+df["日付"] = pd.to_datetime(df["日付"], errors="coerce")
+
+# 数値化（空欄はNaN）
+df["リフティングレベル"] = pd.to_numeric(df["リフティングレベル"], errors="coerce")
+
+# 「その日にレベルが書かれている行」だけを対象にする
+level_written = df["リフティングレベル"].notna()
+
+# 前方補完して有効レベルを作る
+df["_lvl"] = df["リフティングレベル"].ffill()
+
+# レベル変化（かつ、その日に記入がある日）
+df["_lvl_change"] = df["_lvl"].ne(df["_lvl"].shift(1)) & level_written
+
+# 変化日だけ抜き出し（後でjoinする用）
+level_change_days = df.loc[df["_lvl_change"], ["日付"]].copy()
+level_change_days["レベル変化"] = True
+
+
 # 選択されたデータ抽出
 chart_data = df_long[df_long["種目"] == selected_event].copy()
 chart_data = chart_data.sort_values("日付")
 
 # 日付をdatetime型に変換
 chart_data["日付"] = pd.to_datetime(chart_data["日付"], errors="coerce")
+
+# --- 🔴 レベル変化フラグを付与 ---
+chart_data = chart_data.merge(level_change_days, on="日付", how="left")
+chart_data["レベル変化"] = chart_data["レベル変化"].fillna(False)
 
 # 日付順にソート
 chart_data = chart_data.sort_values("日付")
@@ -333,6 +357,18 @@ if not chart_data.empty:
 
         # --- レイヤー作成 ---
         layers = [line]
+
+        # --- 🔴 レベル変化点だけ赤丸（枠だけ）を重ねる ---
+red_points = (
+    alt.Chart(chart_data[chart_data["レベル変化"]])
+    .mark_point(size=160, filled=False, stroke="red", strokeWidth=3)
+    .encode(
+        x=alt.X("日付:T"),
+        y=alt.Y("記録:Q")
+    )
+)
+
+layers.append(red_points)
 
         # --- ライン（基準値 or 目標値） ---
         if line_type == "基準値":
